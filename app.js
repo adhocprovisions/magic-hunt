@@ -195,8 +195,12 @@
     }
     // First tap anywhere: wake up Web Audio, the recorded-voice player and speech (iPhone/iPad need this).
     let audioUnlocked = false;
+    // iPhone/iPad (Safari 17+): let the game's voice and sounds play OVER other apps' music (e.g. Spotify)
+    // instead of pausing it. Other apps duck briefly while the narrator talks. Older iOS ignores this.
+    try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
     function unlockAudio() {
       if (audioUnlocked) return; audioUnlocked = true;
+      try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
       const c = audio();
       if (c) { try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch (e) {} }
       try { player.muted = true; player.src = silentWav();
