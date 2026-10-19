@@ -174,7 +174,7 @@
       { n: 9, at: "bed", hideAt: "Under the blanket on a bed", next: "kitchen", code: ["star", "stocking", "house", "mitten"], letter: "E",
         unlock: "No napping yet! Only one more clue to go." },
       { n: 10, at: "kitchen", hideAt: "In the kitchen, by the cookies", next: "tree", code: ["gift", "holly", "tree", "bell"], letter: "S",
-        unlock: "That's all ten! The magic is gathering under the Christmas tree..." },
+        unlock: "That's all ten clues!! The magic is ready for you under the Christmas tree..." },
     ].map(function (c) { c.riddle = null; return c; }),
 
     finale: {
