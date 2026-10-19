@@ -168,7 +168,7 @@
       { n: 6, at: "window", hideAt: "By a window", next: "boots", code: ["stocking", "tree", "gift", "house"], letter: "L",
         unlock: "Was that a reindeer outside? Keep going!" },
       { n: 7, at: "boots", hideAt: "With the coats and boots", next: "bath", code: ["holly", "star", "stocking", "bell"], letter: "A",
-        unlock: "Wrap up warm. The magic is getting stronger." },
+        unlock: "Let's stay warm. The magic is getting stronger." },
       { n: 8, at: "bath", hideAt: "Inside the (dry!) bathtub", next: "bed", code: ["house", "gift", "mitten", "tree"], letter: "K",
         unlock: "Splish splash! The magic loves a bubble bath." },
       { n: 9, at: "bed", hideAt: "Under the blanket on a bed", next: "kitchen", code: ["star", "stocking", "house", "mitten"], letter: "E",
