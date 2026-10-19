@@ -33,11 +33,18 @@
     { id: "pumpkin", name: "Pumpkin", svg: () => M().pumpkin(50, 92, 82, P, false) },
     { id: "bat", name: "Bat", svg: () => M().bat(50, 54, 82, P.purple) + `<circle cx="46" cy="50" r="2.4" fill="${P.mustard}"/><circle cx="54" cy="50" r="2.4" fill="${P.mustard}"/>` },
     { id: "ghost", name: "Ghost", svg: () => ghostSvg(P.ink) },
-    { id: "cat", name: "Cat", svg: () => `<path d="M30 92 C24 70 28 54 38 46 L34 22 L46 34 H54 L66 22 L62 46 C72 54 76 70 70 92Z" fill="${P.ink}"/>
-      <path d="M70 90 C86 88 92 76 86 66" stroke="${P.ink}" stroke-width="7" fill="none" stroke-linecap="round"/>${eyes(38, 50, 1.1)}<path d="M47 60 l3 3 3 -3" fill="${P.pink}"/>` },
+    { id: "cat", name: "Cat", svg: () => `<path d="M74 88 C92 86 96 66 84 58" stroke="${P.ink}" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M28 92 C26 72 34 60 50 60 C66 60 74 72 72 92Z" fill="${P.ink}"/>
+      <path d="M29 30 L31 6 L46 20Z M71 30 L69 6 L54 20Z" fill="${P.ink}"/><path d="M33 22 L34 12 L41 19Z M67 22 L66 12 L59 19Z" fill="${P.pink}"/>
+      <ellipse cx="50" cy="38" rx="25" ry="22" fill="${P.ink}"/>
+      <ellipse cx="40" cy="36" rx="6.5" ry="7.5" fill="${P.mustard}"/><ellipse cx="60" cy="36" rx="6.5" ry="7.5" fill="${P.mustard}"/>
+      <ellipse cx="40" cy="36.5" rx="2" ry="5.5" fill="${P.ink}"/><ellipse cx="60" cy="36.5" rx="2" ry="5.5" fill="${P.ink}"/>
+      <circle cx="41.6" cy="33" r="1.4" fill="#fff"/><circle cx="61.6" cy="33" r="1.4" fill="#fff"/>
+      <path d="M46.5 46 H53.5 L50 50Z" fill="${P.pink}"/><path d="M50 50 Q47 54 44 52 M50 50 Q53 54 56 52" stroke="${P.cream}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M36 47 L20 45 M36 50 L21 52 M64 47 L80 45 M64 50 L79 52" stroke="${P.cream}" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>` },
     { id: "moon", name: "Moon", svg: () => `<path d="M62 10 C36 12 20 34 22 56 C24 78 44 94 66 90 C48 84 38 68 38 50 C38 32 48 18 62 10Z" fill="${P.mustard}"/>
       <path d="M74 30 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3Z" fill="${P.mustard}"/><circle cx="34" cy="44" r="4" fill="${P.tan}" opacity=".5"/><circle cx="36" cy="66" r="3" fill="${P.tan}" opacity=".5"/>` },
-    { id: "hat", name: "Witch's hat", svg: () => `<path d="M50 8 C56 30 62 50 70 72 H30 C40 52 46 30 50 8Z" fill="${P.green}"/><path d="M50 8 C44 12 40 14 34 12" stroke="${P.green}" stroke-width="6" fill="none" stroke-linecap="round"/>
+    { id: "hat", name: "Witch's hat", svg: () => `<path d="M50 8 C56 30 62 50 70 72 H30 C40 52 46 30 50 8Z" fill="${P.green}"/>
       <ellipse cx="50" cy="76" rx="44" ry="10" fill="${P.green}"/><path d="M32 64 H68 L71 72 H29Z" fill="${P.purple}"/><rect x="45" y="63" width="10" height="10" fill="none" stroke="${P.mustard}" stroke-width="3"/>` },
     { id: "candy", name: "Candy", svg: () => `<path d="M30 50 L10 34 V66Z M70 50 L90 34 V66Z" fill="${P.pink}"/><ellipse cx="50" cy="50" rx="24" ry="18" fill="${P.red}"/>
       <path d="M36 36 Q42 50 36 64 M50 32 Q56 50 50 68 M64 36 Q70 50 64 64" stroke="${P.cream}" stroke-width="5" fill="none"/>` },
@@ -96,7 +103,7 @@
     audioVersion: 1,
     sounds: { tap: "plink", correct: "spooky", wrong: "thud", finale: "spookyFinale", unlock: "spookyUnlock", critter: "squeak" },
     particles: "leaves", // falling autumn leaves instead of snow
-    critter: { kind: "cat", label: "A little black cat! Tap her.", sound: "Meow!", preset: "meow" },
+    critter: { kind: "cat", label: "A little black cat! Tap her.", sound: "Meow!", preset: "meow", file: "meow.mp3" }, // add audio/halloween/meow.mp3 to use a recorded meow; otherwise a synthesised one plays
 
     // Words for things the engine says
     ui: {

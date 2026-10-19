@@ -96,15 +96,25 @@
       thud: (t) => { tone(220, t, 0.22, "triangle", 0.22); tone(165, t + 0.16, 0.32, "triangle", 0.22); },
       carillon: (t) => { [1046, 1318, 1568, 2093, 1568, 2093].forEach((f, i) => bell(f, t + i * 0.16, 0.17)); PRESETS.sleighbells(t + 1); },
       // A cat's meow: a buzzy tone that rises then falls, through a sweeping filter (sounds like "mee-ow").
+      // A cat's "mee-ow": a voice-like buzz shaped by two moving formants (mouth closed "m", open "ee", round "ow"),
+      // with a gentle pitch rise and fall and a little vibrato. Soft attack so it never sounds like a beep.
       meow: (t) => {
         const c = audio(); if (!c) return;
-        const o = c.createOscillator(), o2 = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
-        o.type = "sawtooth"; o2.type = "triangle"; f.type = "bandpass"; f.Q.value = 4;
-        [[o, 1], [o2, 2.01]].forEach(([os, m]) => { os.frequency.setValueAtTime(520 * m, t); os.frequency.linearRampToValueAtTime(820 * m, t + 0.18); os.frequency.linearRampToValueAtTime(760 * m, t + 0.32); os.frequency.exponentialRampToValueAtTime(430 * m, t + 0.62); });
-        f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(2400, t + 0.2); f.frequency.exponentialRampToValueAtTime(700, t + 0.62);
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.32, t + 0.05); g.gain.setValueAtTime(0.3, t + 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.66);
-        const g2 = c.createGain(); g2.gain.value = 0.35; o2.connect(g2).connect(f);
-        o.connect(f).connect(g).connect(c.destination); o.start(t); o2.start(t); o.stop(t + 0.7); o2.stop(t + 0.7);
+        const D = 0.78, src = c.createOscillator(), vib = c.createOscillator(), vibG = c.createGain();
+        src.type = "sawtooth";
+        src.frequency.setValueAtTime(470, t); src.frequency.linearRampToValueAtTime(690, t + 0.24); src.frequency.linearRampToValueAtTime(640, t + 0.42); src.frequency.exponentialRampToValueAtTime(360, t + D);
+        vib.frequency.value = 6; vibG.gain.value = 9; vib.connect(vibG).connect(src.frequency);
+        const out = c.createGain(), lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3200;
+        const formant = (pts, q, level) => {
+          const f = c.createBiquadFilter(), g = c.createGain(); f.type = "bandpass"; f.Q.value = q; g.gain.value = level;
+          f.frequency.setValueAtTime(pts[0], t); f.frequency.linearRampToValueAtTime(pts[1], t + 0.22); f.frequency.exponentialRampToValueAtTime(pts[2], t + D);
+          src.connect(f).connect(g).connect(lp);
+        };
+        formant([420, 900, 560], 5, 1.0);   // F1
+        formant([1100, 2300, 950], 9, 0.7); // F2
+        lp.connect(out).connect(c.destination);
+        out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.5, t + 0.1); out.gain.linearRampToValueAtTime(0.42, t + 0.45); out.gain.exponentialRampToValueAtTime(0.0001, t + D);
+        src.start(t); vib.start(t); src.stop(t + D + 0.05); vib.stop(t + D + 0.05);
       },
       squeak: (t) => { tone(2300, t, 0.09, "sine", 0.16, 3700); tone(2500, t + 0.13, 0.12, "sine", 0.15, 3900); tone(3100, t + 0.13, 0.08, "triangle", 0.04); },
       unlock: (t) => { tone(600, t, 0.08, "square", 0.06); tone(900, t + 0.09, 0.1, "square", 0.06); PRESETS.carillon(t + 0.2); },
@@ -854,7 +864,9 @@
       }
       m.addEventListener("click", () => {
         if (!busy || m.classList.contains("caught")) return;
-        play(critter.preset || "squeak"); if (navigator.vibrate) navigator.vibrate(20);
+        if (critter.file && !state.muted) { const a = new Audio(`audio/${T.id}/${critter.file}?v=${T.audioVersion || 1}`); a.play().catch(() => play(critter.preset || "squeak")); }
+        else play(critter.preset || "squeak");
+        if (navigator.vibrate) navigator.vibrate(20);
         m.classList.add("caught");
         state.mice = (state.mice || 0) + 1; save();
         const mc = document.getElementById("miceCount"); if (mc) { mc.hidden = false; mc.querySelector("span").textContent = state.mice; }
