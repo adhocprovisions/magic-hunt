@@ -102,7 +102,7 @@
     spots,
 
     // Set to true once recordings are uploaded to site/audio/christmas/ (see VOICE-SCRIPT.md).
-    voiceFiles: false,
+    voiceFiles: true,
     sounds: { tap: "bell", correct: "sleighbells", wrong: "thud", finale: "carillon" },
 
     // Two ways to play. The printed cards are the same; the app adapts.
