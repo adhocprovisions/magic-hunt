@@ -173,7 +173,7 @@
         unlock: "Splish splash! The magic loves a bubble bath." },
       { n: 9, at: "bed", hideAt: "Bed", next: "kitchen", code: ["star", "stocking", "house", "mitten"], letter: "E",
         unlock: "No napping yet! Only one more clue to go." },
-      { n: 10, at: "kitchen", hideAt: "Kitchen (where you keep cookies)", next: "tree", code: ["gift", "holly", "tree", "bell"], letter: "S",
+      { n: 10, at: "kitchen", hideAt: "Kitchen, by the cookies", next: "tree", code: ["gift", "holly", "tree", "bell"], letter: "S",
         unlock: "That's all ten! The magic is gathering under the Christmas tree..." },
     ].map(function (c) { c.riddle = null; return c; }),
 
