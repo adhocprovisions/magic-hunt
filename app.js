@@ -335,7 +335,9 @@
         </section>
         <section class="panel">
           ${complete
-            ? `<p class="prompt">All ten found!</p><div class="row"><button class="btn" id="openFinale">Open the surprise</button></div>`
+            ? `<p class="prompt">All ten found! Last stop…</p>
+               ${little() ? pictureClue(T.spots[T.clues[total - 1].next], "Go to") : riddleBox(T.clues[total - 1].riddle)}
+               <div class="row"><button class="btn" id="openFinale">We're at the tree!</button></div>`
             : `${multi ? `<p class="turn-pill">${esc(fill(T.turn, { name: currentName() }))}</p>` : ""}
                ${done ? (little() ? lookBy() : `<div class="row" style="margin:0 0 12px"><button class="ghost small" id="seeRiddle">See your last riddle</button></div>`) : ""}
                <p class="prompt">${esc(T.prompt[state.mode || "big"])}</p>
@@ -431,7 +433,7 @@
             <p class="say">“${esc(clue.unlock)}”</p>
             ${pictureClue(spot, last ? "Now for the surprise!" : "Where next?")}
             <div class="row">${canSpeak || T.voiceFiles ? `<button class="ghost" data-speak>Hear it again</button>` : ""}
-              <button class="btn" data-close>${last ? "See the surprise" : "Off I go!"}</button></div>
+              <button class="btn" data-close>Off I go!</button></div>
             ${nextNote}
             <p class="note">Colour in ornament ${clue.n} on your Magic Collector.</p>
           </div>`
@@ -447,9 +449,9 @@
             ${riddleBox(clue.riddle)}
             ${nextNote}
             <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read the riddle aloud</button>` : ""}
-              <button class="btn" data-close>${last ? "See the surprise" : "Off I go!"}</button></div>
+              <button class="btn" data-close>Off I go!</button></div>
           </div>`,
-        () => { stopSpeaking(); if (last) setTimeout(showFinale, 150); });
+        stopSpeaking);
       const hintPart = { key: "hint-" + clue.next, text: spot.hint };
       const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([lit ? hintPart : { key: "riddle-" + clue.n, text: riddleText(clue.riddle) }]);
       if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock, optional: true }, hintPart]), 900);
