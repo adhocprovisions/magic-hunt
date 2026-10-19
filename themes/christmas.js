@@ -158,7 +158,7 @@
       { n: 1, at: "stockings", hideAt: "Inside a stocking", next: "books", code: ["star", "bell", "tree", "gift"], letter: "S",
         unlock: "Ho ho ho! Not filled yet... but they're full of magic now." },
       { n: 2, at: "books", hideAt: "On the bookshelf", next: "fridge", code: ["mitten", "house", "holly", "star"], letter: "N",
-        unlock: "Every good story needs a clever detective." },
+        unlock: "Every good story needs a clever detective. I think that might be you!" },
       { n: 3, at: "fridge", hideAt: "On the fridge door", next: "table", code: ["gift", "stocking", "bell", "mitten"], letter: "O",
         unlock: "Brrr! That clue was chilly. Good thing you're quick." },
       { n: 4, at: "table", hideAt: "Under a dinner table chair", next: "couch", code: ["tree", "holly", "house", "stocking"], letter: "W",
