@@ -337,7 +337,7 @@
           ${complete
             ? `<p class="prompt">All ten found! Last stop…</p>
                ${little() ? pictureClue(T.spots[T.clues[total - 1].next], "Go to") : riddleBox(T.clues[total - 1].riddle)}
-               <div class="row"><button class="btn" id="openFinale">We're at the tree!</button></div>`
+               <div class="row"><button class="btn" id="openFinale">${little() ? "See the magic!" : "We're at the tree!"}</button></div>`
             : `${multi ? `<p class="turn-pill">${esc(fill(T.turn, { name: currentName() }))}</p>` : ""}
                ${done ? (little() ? lookBy() : `<div class="row" style="margin:0 0 12px"><button class="ghost small" id="seeRiddle">See your last riddle</button></div>`) : ""}
                <p class="prompt">${esc(T.prompt[state.mode || "big"])}</p>
@@ -451,7 +451,7 @@
             <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read the riddle aloud</button>` : ""}
               <button class="btn" data-close>Off I go!</button></div>
           </div>`,
-        stopSpeaking);
+        () => { stopSpeaking(); if (last && lit) setTimeout(showFinale, 150); });
       const hintPart = { key: "hint-" + clue.next, text: spot.hint };
       const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([lit ? hintPart : { key: "riddle-" + clue.n, text: riddleText(clue.riddle) }]);
       if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock, optional: true }, hintPart]), 900);
