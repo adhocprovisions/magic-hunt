@@ -1,6 +1,9 @@
 /* Interactive scavenger hunt — one app, many themes, two age modes.
    Theme chosen by URL: index.html?theme=christmas  (defaults to the first theme below).
-   100% client-side: progress lives in the player's own browser (localStorage). No server, no accounts. */
+   100% client-side: progress lives in the player's own browser (localStorage). No server, no accounts.
+
+   Flow: grown-up setup → app locked → kids paint Santa's letter to reveal the password → unlock
+         → enter finders' names → first riddle → 10 clues → celebration under the tree. */
 (function () {
   "use strict";
 
@@ -33,14 +36,19 @@
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const sym = (id) => T.symbols.find((s) => s.id === id);
     const icon = (svg) => `<svg viewBox="0 0 100 100" aria-hidden="true">${svg}</svg>`;
+    const fill = (str, o) => String(str).replace(/\{(\w+)\}/g, (_, k) => (o[k] != null ? o[k] : ""));
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // ---------- Saved progress (per theme). Storage can be unavailable (private mode): the game still works.
-    const KEY = "hunt:" + T.id + ":v2";
-    let state = { solved: [], welcomed: false, muted: false, mode: null };
+    const KEY = "hunt:" + T.id + ":v3";
+    let state = { mode: null, surprise: "", setupDone: false, unlocked: false, namesDone: false, firstSeen: false,
+      names: [], turn: 0, solved: [], muted: false, mice: 0 };
     try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch (e) {}
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
     const little = () => state.mode === "little";
     const isSolved = (n) => state.solved.includes(n);
+    const namesText = (list = state.names) => list.length <= 1 ? (list[0] || "") : list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
+    const currentName = () => (state.names.length ? state.names[state.turn % state.names.length] : "");
 
     // ---------- Sound: synthesised with Web Audio, so there are no audio files to host or license.
     let ctx = null;
@@ -49,10 +57,11 @@
       if (ctx.state === "suspended") ctx.resume();
       return ctx;
     };
-    function tone(freq, t0, dur, type = "sine", gain = 0.2) {
+    function tone(freq, t0, dur, type = "sine", gain = 0.2, toFreq) {
       const c = audio(); if (!c) return;
       const o = c.createOscillator(), g = c.createGain();
       o.type = type; o.frequency.setValueAtTime(freq, t0);
+      if (toFreq) o.frequency.exponentialRampToValueAtTime(toFreq, t0 + dur * 0.6);
       g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.008);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
       o.connect(g).connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
@@ -72,11 +81,13 @@
       sleighbells: (t) => { for (let i = 0; i < 16; i++) { const tt = t + i * 0.055 + Math.random() * 0.02; noise(tt, 0.05, 6500 + Math.random() * 2500, 0.5); tone(2400 + Math.random() * 1600, tt, 0.12, "sine", 0.03); } bell(1046, t + 0.05, 0.12); bell(1568, t + 0.25, 0.1); },
       thud: (t) => { tone(220, t, 0.22, "triangle", 0.18); tone(165, t + 0.16, 0.32, "triangle", 0.18); },
       carillon: (t) => { [1046, 1318, 1568, 2093, 1568, 2093].forEach((f, i) => bell(f, t + i * 0.16, 0.14)); PRESETS.sleighbells(t + 1); },
+      squeak: (t) => { tone(2300, t, 0.09, "sine", 0.13, 3700); tone(2500, t + 0.13, 0.12, "sine", 0.12, 3900); tone(3100, t + 0.13, 0.08, "triangle", 0.03); },
+      unlock: (t) => { tone(600, t, 0.08, "square", 0.05); tone(900, t + 0.09, 0.1, "square", 0.05); PRESETS.carillon(t + 0.2); },
     };
     const play = (name) => {
       if (state.muted) return;
       const c = audio(); if (!c) return;
-      const p = PRESETS[T.sounds[name]]; if (p) p(c.currentTime + 0.01);
+      const p = PRESETS[(T.sounds && T.sounds[name]) || name]; if (p) p(c.currentTime + 0.01);
       if (navigator.vibrate && name === "wrong") navigator.vibrate(60);
     };
 
@@ -88,15 +99,15 @@
     if (canSpeak) { loadVoices(); try { speechSynthesis.addEventListener("voiceschanged", loadVoices); } catch (e) {} }
     function pickVoice() {
       const en = voices.filter((v) => /^en/i.test(v.lang));
-      const byName = [/serena.*(premium|enhanced)/i, /serena/i, /(daniel|kate|martha|arthur|stephanie).*(premium|enhanced)/i, /google uk english female/i, /(libby|sonia|maisie|hazel|kate|daniel)/i];
+      const byName = [/serena.*(premium|enhanced)/i, /serena/i, /(jamie|daniel|kate|stephanie|oliver).*(premium|enhanced)/i, /google uk english female/i, /(libby|sonia|maisie|hazel|kate|daniel)/i];
       for (const r of byName) { const v = en.find((x) => r.test(x.name)); if (v) return v; }
       return en.find((x) => /en[-_]GB/i.test(x.lang)) || en[0] || null;
     }
     function speak(text) {
-      if (!canSpeak || state.muted) return;
+      if (!canSpeak || state.muted || !text) return;
       try {
         speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
+        const u = new SpeechSynthesisUtterance(String(text).replace(/[“”]/g, ""));
         const v = pickVoice();
         if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-GB";
         u.rate = 0.9; u.pitch = 1.05;
@@ -104,19 +115,155 @@
       } catch (e) {}
     }
     const stopSpeaking = () => { try { canSpeak && speechSynthesis.cancel(); } catch (e) {} };
+    const riddleText = (lines) => lines.join(" ");
 
-    // ---------- Main screen
-    let entry = [];
+    // ---------- Shared page chrome
+    function frame(inner, { eyebrow, title, sub, heroH = 150 } = {}) {
+      $app.innerHTML = `
+        <div class="hero" style="height:${heroH}px">${M.village(P, { w: 560, h: 220, seed: 4, houses: 6, trees: 11 })}</div>
+        <header class="top">
+          ${eyebrow ? `<p class="eyebrow">${esc(eyebrow)}</p>` : ""}
+          <h1>${esc(title || T.title)}</h1>
+          ${sub || ""}
+        </header>
+        ${inner}
+        <footer>
+          <button class="tiny" id="mute">${state.muted ? iconMute() : iconSound()}<span>${state.muted ? "Sound off" : "Sound on"}</span></button>
+          <span class="mice-count" id="miceCount" ${state.mice ? "" : "hidden"}>${mouseSvg(true)}<span>${state.mice}</span></span>
+          <button class="tiny" id="grownups" aria-label="Grown-ups: press and hold">${iconKey()}<span>Grown-ups (hold)</span><i class="hold-ring"></i></button>
+        </footer>
+        <div class="foot-art">${M.pineRow(P, { w: 900, h: 60 })}</div>`;
+      document.getElementById("mute").onclick = () => { state.muted = !state.muted; save(); if (state.muted) stopSpeaking(); render(); if (!state.muted) play("tap"); };
+      holdToOpen(document.getElementById("grownups"), openParent);
+    }
+
     function render() {
+      if (!state.setupDone) return renderSetup();
+      if (!state.unlocked) return renderLock();
+      if (!state.namesDone) return renderNames();
+      renderHunt();
+    }
+
+    // ---------- 1. Grown-up setup
+    function renderSetup() {
+      frame(`
+        <section class="panel setup-panel">
+          <h3><span class="n">1</span>Who's playing?</h3>
+          ${modeButtons(state.mode)}
+          <h3><span class="n">2</span>What surprise have they earned?</h3>
+          ${surpriseField()}
+          <h3><span class="n">3</span>Before you lock it</h3>
+          <ol class="checklist">
+            <li>Write <b>${esc(T.password)}</b> in big letters on the back of Santa's letter with a white crayon. Press hard.</li>
+            <li>Hide the ${total} clue cards. Each card says where it goes.</li>
+            <li>Put the surprise under the Christmas tree.</li>
+          </ol>
+          ${voiceBlock()}
+          <button class="btn wide" id="lockIt" ${state.mode ? "" : "disabled"}>Lock the Magic Finder</button>
+          <p class="note center">Then leave Santa's letter at the front door, knock loudly (or ring the bell) and hide!</p>
+        </section>`, { eyebrow: "Grown-ups only", title: "Set up the magic", sub: `<p class="lede">Two minutes before the knock on the door.</p>`, heroH: 120 });
+      document.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => {
+        state.mode = b.dataset.mode; save();
+        document.querySelectorAll("[data-mode]").forEach((x) => x.classList.toggle("on", x === b));
+        document.getElementById("lockIt").disabled = false;
+      }));
+      bindSurprise($app); bindVoice($app);
+      document.getElementById("lockIt").onclick = () => { state.setupDone = true; save(); play("tap"); render(); };
+    }
+
+    // ---------- 2. Lock screen: the password from the back of Santa's letter
+    let pw = [];
+    function renderLock() {
+      const letters = [...T.password.split(""), ...(T.passwordDecoys || [])];
+      const rnd = M.rand(7); const order = letters.map((l) => [rnd(), l]).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
+      frame(`
+        <section class="panel lock-panel">
+          <div class="padlock" id="padlock">${padlockSvg()}</div>
+          <p class="say">${esc(T.lock.body)}</p>
+          ${canSpeak ? `<button class="ghost small" id="hearLock">${iconSound()} Hear Santa's message</button>` : ""}
+          <div class="pw-slots" id="pwSlots">${T.password.split("").map(() => '<div class="pw-slot"></div>').join("")}</div>
+          <div class="letters">${order.map((l) => `<button class="lt" data-l="${l}">${l}</button>`).join("")}</div>
+          <div class="pad-actions"><button class="ghost" id="pwUndo" disabled>Undo</button></div>
+          <p class="msg" id="msg"></p>
+        </section>`, { eyebrow: "A message from " + T.character.name, title: T.lock.heading });
+      pw = [];
+      const draw = () => {
+        document.querySelectorAll(".pw-slot").forEach((el, i) => { el.textContent = pw[i] || ""; el.classList.toggle("filled", !!pw[i]); });
+        document.getElementById("pwUndo").disabled = !pw.length;
+      };
+      const h = document.getElementById("hearLock"); if (h) h.onclick = () => speak(T.lock.heading + ". " + T.lock.body);
+      document.getElementById("pwUndo").onclick = () => { pw.pop(); draw(); };
+      document.querySelectorAll(".lt").forEach((b) => (b.onclick = () => {
+        if (pw.length >= T.password.length) return;
+        b.classList.add("pressed"); setTimeout(() => b.classList.remove("pressed"), 140);
+        pw.push(b.dataset.l); play("tap"); draw(); setMsg("");
+        if (pw.length === T.password.length) setTimeout(checkPw, 350);
+      }));
+      draw();
+    }
+    function checkPw() {
+      if (pw.join("") === T.password) return doUnlock();
+      play("wrong");
+      const s = document.getElementById("pwSlots"); s.classList.remove("shake"); void s.offsetWidth; s.classList.add("shake");
+      setMsg(T.lock.wrong); speak(T.lock.wrong);
+      setTimeout(() => { pw = []; document.querySelectorAll(".pw-slot").forEach((el) => { el.textContent = ""; el.classList.remove("filled"); }); document.getElementById("pwUndo").disabled = true; }, 700);
+    }
+    function doUnlock() {
+      const pl = document.getElementById("padlock"); if (pl) pl.classList.add("open");
+      document.querySelectorAll(".pw-slot").forEach((el) => el.classList.add("glow"));
+      play("unlock"); snowBurst(); setMsg(T.lock.unlocked); speak(T.lock.unlocked);
+      setTimeout(() => { state.unlocked = true; save(); render(); }, 1600);
+    }
+
+    // ---------- 3. Finders' names
+    function renderNames() {
+      const list = state.names.length ? state.names : [""];
+      frame(`
+        <section class="panel names-panel">
+          <p class="say">${esc(T.namesStep.body)}</p>
+          <div class="name-list" id="nameList">${list.map((n, i) => nameRow(n, i)).join("")}</div>
+          <button class="ghost small" id="addName" ${list.length >= 4 ? "hidden" : ""}>+ ${esc(T.namesStep.add)}</button>
+          <button class="btn wide" id="namesGo">${esc(T.namesStep.button)}</button>
+          <button class="link" id="namesSkip">${esc(T.namesStep.skip)}</button>
+        </section>`, { eyebrow: T.lock.unlocked, title: T.namesStep.heading, heroH: 120 });
+      const listEl = document.getElementById("nameList");
+      const read = () => [...listEl.querySelectorAll("input")].map((i) => i.value.trim().replace(/\s+/g, " ").slice(0, 20)).filter(Boolean);
+      document.getElementById("addName").onclick = (e) => {
+        const n = listEl.querySelectorAll("input").length; if (n >= 4) return;
+        listEl.insertAdjacentHTML("beforeend", nameRow("", n)); listEl.querySelectorAll("input")[n].focus();
+        if (n + 1 >= 4) e.currentTarget.hidden = true;
+      };
+      const go = (names) => { state.names = names; state.namesDone = true; state.turn = 0; save(); play("tap"); render(); showFirstRiddle(); };
+      document.getElementById("namesGo").onclick = () => go(read());
+      document.getElementById("namesSkip").onclick = () => go([]);
+    }
+    const nameRow = (v, i) => `<label class="name-row"><span>${i + 1}</span><input id="name${i}" type="text" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="${esc(T.namesStep.placeholder)}" value="${esc(v)}"></label>`;
+
+    // ---------- 4. First riddle (leads to Clue 1)
+    function showFirstRiddle() {
+      const lines = T.riddles[T.firstSpot], spot = T.spots[T.firstSpot];
+      const who = namesText();
+      const el = sheet(`
+        <div class="inner">
+          <p class="kicker">${esc(T.firstRiddle.kicker)}</p>
+          <h2>${who ? "Ready, " + esc(who) + "?" : "Ready, Magic Finders?"}</h2>
+          <div class="riddle-box">${lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>
+          ${little() ? `<div class="next-spot"><p class="kicker">Look by</p><div class="spot-pic">${icon(spot.svg())}</div><p class="spot-name">${esc(spot.name)}</p></div>` : ""}
+          <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read it aloud</button>` : ""}
+            <button class="btn" data-close>${esc(T.firstRiddle.go)}</button></div>
+        </div>`, () => { stopSpeaking(); state.firstSeen = true; save(); });
+      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => speak(riddleText(lines));
+      setTimeout(() => speak((who ? "Ready, " + who + "? " : "") + "Here's your first riddle. " + riddleText(lines)), 700);
+    }
+
+    // ---------- 5. The hunt
+    let entry = [];
+    function renderHunt() {
       const done = state.solved.length, complete = done >= total;
       const hang = (i) => 6 + Math.round(Math.sin((i / (total - 1)) * Math.PI) * 20);
-      $app.innerHTML = `
-        <div class="hero">${M.village(P, { w: 560, h: 220, seed: 4, houses: 6, trees: 11 })}</div>
-        <header class="top">
-          <p class="eyebrow">${esc(T.eyebrow)}</p>
-          <h1>${esc(T.title)}</h1>
-          <button class="mode-pill" id="modePill">${esc(T.modes[state.mode || "big"].label)} · ${esc(T.modes[state.mode || "big"].ages)}</button>
-        </header>
+      const m = T.modes[state.mode || "big"];
+      const multi = state.names.length > 1;
+      frame(`
         <section class="garland" aria-label="Progress: ${done} of ${total} found">
           <svg class="string" viewBox="0 0 400 40" preserveAspectRatio="none"><path d="M0 4 Q200 58 400 4" fill="none" stroke="var(--tan)" stroke-width="1.6"/></svg>
           <div class="ornaments" style="grid-template-columns:repeat(${total},1fr)">
@@ -128,18 +275,21 @@
         <section class="panel">
           ${complete
             ? `<p class="prompt">All ten found!</p><div class="row"><button class="btn" id="openFinale">Open the surprise</button></div>`
-            : `<p class="prompt">${esc(T.prompt[state.mode || "big"])}</p>
+            : `${multi ? `<p class="turn-pill">${esc(fill(T.turn, { name: currentName() }))}</p>` : ""}
+               <p class="prompt">${esc(T.prompt[state.mode || "big"])}</p>
                <div class="slots" id="slots">${[0, 1, 2, 3].map(() => '<div class="slot"></div>').join("")}</div>
                <div class="keypad">${T.symbols.map((s) => `<button class="key" data-sym="${s.id}" aria-label="${esc(s.name)}"><span class="tile">${icon(s.svg())}</span><span class="nm">${esc(s.name)}</span></button>`).join("")}</div>
                <div class="pad-actions"><button class="ghost" id="undo" disabled>Undo</button></div>
                <p class="msg" id="msg"></p>`}
-        </section>
-        <footer>
-          <button class="tiny" id="mute">${state.muted ? iconMute() : iconSound()}<span>${state.muted ? "Sound off" : "Sound on"}</span></button>
-          <button class="tiny" id="grownups" aria-label="Grown-ups: press and hold">${iconKey()}<span>Grown-ups (hold)</span><i class="hold-ring"></i></button>
-        </footer>
-        <div class="foot-art">${M.pineRow(P, { w: 900, h: 60 })}</div>`;
-      bind(complete);
+        </section>`, {
+        eyebrow: T.eyebrow,
+        sub: `<button class="mode-pill" id="modePill">${state.names.length ? esc(namesText()) + " · " : ""}${esc(m.label)}</button>`,
+      });
+      document.getElementById("modePill").onclick = () => setMsg("Grown-ups can change this: hold the Grown-ups button.");
+      if (complete) { document.getElementById("openFinale").onclick = showFinale; return; }
+      document.querySelectorAll(".key").forEach((k) => k.addEventListener("click", () => press(k.dataset.sym, k)));
+      document.getElementById("undo").onclick = () => { entry.pop(); drawSlots(); };
+      drawSlots();
     }
     function ornament(n, done) {
       if (T.progressIcon) return T.progressIcon(n, done);
@@ -148,17 +298,6 @@
         ? `<svg viewBox="0 0 30 34"><rect x="11" y="0" width="8" height="5" rx="1" fill="${P.tan}"/><circle cx="15" cy="19" r="13" fill="${c}"/><path d="M3 19 h24" stroke="${P.cream}" stroke-width="2" stroke-dasharray="3 2"/><circle cx="10" cy="13" r="2.6" fill="#fff" opacity=".4"/></svg>`
         : `<svg viewBox="0 0 30 34"><rect x="11" y="0" width="8" height="5" rx="1" fill="none" stroke="${P.tan}"/><circle cx="15" cy="19" r="12.5" fill="${P.card}" stroke="${P.tan}" stroke-dasharray="2.5 2.5"/></svg>`;
     }
-
-    function bind(complete) {
-      document.getElementById("mute").onclick = () => { state.muted = !state.muted; save(); if (state.muted) stopSpeaking(); render(); if (!state.muted) play("tap"); };
-      document.getElementById("modePill").onclick = () => toast("Grown-ups can switch modes: hold the Grown-ups button.");
-      holdToOpen(document.getElementById("grownups"), openParent);
-      if (complete) { document.getElementById("openFinale").onclick = showFinale; return; }
-      document.querySelectorAll(".key").forEach((k) => k.addEventListener("click", () => press(k.dataset.sym, k)));
-      document.getElementById("undo").onclick = () => { entry.pop(); drawSlots(); };
-      drawSlots();
-    }
-
     function drawSlots() {
       document.querySelectorAll(".slot").forEach((el, i) => {
         if (entry[i]) { el.classList.add("filled"); el.innerHTML = icon(sym(entry[i]).svg()); }
@@ -166,7 +305,6 @@
       });
       const u = document.getElementById("undo"); if (u) u.disabled = entry.length === 0;
     }
-
     let checking = false;
     function press(id, el) {
       if (checking || entry.length >= 4) return;
@@ -175,7 +313,6 @@
       if (entry.length === 4) { checking = true; setTimeout(check, 380); }
     }
     const setMsg = (t) => { const m = document.getElementById("msg"); if (m) m.textContent = t; };
-    function toast(t) { setMsg(t); }
 
     function check() {
       checking = false;
@@ -194,43 +331,54 @@
       solve(clue);
     }
 
-    function riddleText(clue) { return clue.riddle.join(" ").replace(/[“”]/g, ""); }
-
     function solve(clue) {
-      state.solved.push(clue.n); save(); play("correct");
+      const who = currentName();
+      const cheer = who ? fill(T.cheers[state.solved.length % T.cheers.length], { name: who }) : "";
+      state.solved.push(clue.n);
+      if (state.names.length) state.turn++;
+      save(); play("correct");
       render();
       const last = state.solved.length >= total;
       const spot = T.spots[clue.next];
+      const next = state.names.length > 1 && !last ? currentName() : "";
+      const nextNote = next ? `<p class="note turn-next">Next turn: <b>${esc(next)}</b></p>` : "";
       const lit = little();
       const el = sheet(lit
         ? `<div class="inner">
-            <p class="kicker">Magic ${clue.n} of ${total} found!</p>
-            <h2>You found the magic!</h2>
+            <p class="kicker">Magic ${state.solved.length} of ${total} found!</p>
+            <h2>${esc(cheer || "You found the magic!")}</h2>
             <p class="say">“${esc(clue.unlock)}”</p>
             <div class="next-spot"><p class="kicker">${last ? "Now for the surprise" : "Next, look by"}</p>
               <div class="spot-pic">${icon(spot.svg())}</div><p class="spot-name">${esc(spot.name)}</p></div>
             <div class="row">${canSpeak ? `<button class="ghost" data-speak>Hear the riddle again</button>` : ""}
               <button class="btn" data-close>${last ? "See the surprise" : "Off I go!"}</button></div>
+            ${nextNote}
             <p class="note">Colour in ornament ${clue.n} on your Magic Collector.</p>
           </div>`
         : `<div class="inner">
+            ${cheer ? `<p class="cheer">${esc(cheer)}</p>` : ""}
             <p class="kicker">Clue ${clue.n} of ${total} cracked</p>
             <h2>Your secret letter is</h2>
             <div class="secret">${esc(clue.letter)}</div>
             <p class="say">“${esc(clue.unlock)}”</p>
             <p class="from">${esc(T.character.name)}</p>
             <p class="note">Write <b>${esc(clue.letter)}</b> in ornament <b>${clue.n}</b> on your Magic Collector.${last ? "" : " Then solve the riddle on your clue to find the next one!"}</p>
+            ${nextNote}
             <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read the riddle aloud</button>` : ""}
               <button class="btn" data-close>${last ? "See the surprise" : "Off I go!"}</button></div>
           </div>`,
         () => { stopSpeaking(); if (last) setTimeout(showFinale, 150); });
-      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => speak(riddleText(clue));
-      if (lit) setTimeout(() => speak(`${clue.unlock} ${last ? "" : "Here's your riddle. "}${riddleText(clue)}`), 900);
+      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => speak(riddleText(clue.riddle));
+      if (lit) setTimeout(() => speak(`${cheer ? cheer + " " : ""}${clue.unlock} ${last ? "" : "Here's your riddle. "}${riddleText(clue.riddle)}`), 900);
+      else if (cheer) setTimeout(() => speak(cheer), 700);
     }
 
+    // ---------- 6. Finale under the tree
     function showFinale() {
       play("finale");
       const f = T.finale[state.mode || "big"], lit = little();
+      const who = namesText();
+      const heading = who ? fill(f.heading, { names: who }) : f.headingNoName;
       const prize = state.surprise || T.finale.defaultSurprise;
       const el = document.createElement("div");
       el.className = "finale"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
@@ -239,7 +387,7 @@
         <canvas class="fx" aria-hidden="true"></canvas>
         <div class="fcard">
           <p class="kicker">${esc(T.title)}</p>
-          <h2>${esc(f.heading)}</h2>
+          <h2>${esc(heading)}</h2>
           ${lit
             ? `<div class="flakes">${T.clues.map((c, i) => `<span style="animation-delay:${0.2 + i * 0.1}s">${icon(flake())}</span>`).join("")}</div>`
             : `<div class="word">${T.finalWord.split("").map((l, i) => `<span style="animation-delay:${0.2 + i * 0.1}s">${esc(l)}</span>`).join("")}</div>`}
@@ -257,16 +405,15 @@
         </div>`;
       document.body.appendChild(el);
       const fx = startFx(el.querySelector(".fx"));
-      const opened = () => {
+      el.querySelector("#gift").onclick = () => {
         const g = el.querySelector("#gift"); if (g.classList.contains("open")) return;
         g.classList.add("open"); play("correct"); fx.burst();
         setTimeout(() => { el.querySelector("#reveal").hidden = false; g.querySelector("span").textContent = ""; }, 450);
         speak(T.finale.earned + " " + prize + "!");
       };
-      el.querySelector("#gift").onclick = opened;
       el.querySelector("[data-close]").onclick = () => { fx.stop(); stopSpeaking(); el.remove(); };
       fx.burst();
-      setTimeout(() => speak(f.heading + " " + f.body + " " + T.finale.tapGift + "."), 1400);
+      setTimeout(() => speak(heading + " " + f.body + " " + T.finale.tapGift + "."), 1400);
     }
 
     // Night-time celebration: glowing tree, twinkling lights, lit-up houses, presents.
@@ -279,9 +426,7 @@
       s += M.house(18, 268, 46, P.pink, warm, rnd) + M.house(78, 262, 38, P.mint, warm, rnd) + M.house(318, 262, 40, P.sky, warm, rnd) + M.house(368, 258, 44, P.butter, warm, rnd);
       s += M.pine(132, 270, 70, P.pine, P.roof) + M.pine(296, 266, 62, P.sage, P.roof);
       s += `<path d="M0 ${H} L0 318 Q140 296 220 314 T420 306 L420 ${H}Z" fill="${P.snow}"/>`;
-      // glow behind the tree
       s += `<defs><radialGradient id="treeGlow"><stop offset="0" stop-color="${P.mustard}" stop-opacity=".55"/><stop offset="1" stop-color="${P.mustard}" stop-opacity="0"/></radialGradient></defs><circle class="glow" cx="210" cy="200" r="150" fill="url(#treeGlow)"/>`;
-      // big tree
       const cx = 210, base = 318;
       s += `<rect x="${cx - 9}" y="${base - 26}" width="18" height="26" fill="${P.roof}"/>`;
       [[96, 168, 54], [146, 228, 80], [204, 298, 108]].forEach(([top, bot, half]) => {
@@ -291,11 +436,9 @@
       const lights = [[-24, 132], [20, 128], [-6, 112], [-48, 186], [0, 194], [44, 180], [-26, 170], [24, 160], [-78, 254], [-34, 262], [14, 258], [60, 248], [86, 268], [-56, 232], [36, 226], [-10, 236]];
       const cols = [P.red, P.mustard, P.cream, P.mint, P.pink];
       lights.forEach(([dx, y], i) => (s += `<circle class="bulb" style="animation-delay:${(i * 0.17) % 1.4}s" cx="${cx + dx}" cy="${y}" r="5" fill="${cols[i % cols.length]}"/>`));
-      // star with rays
       s += `<g class="rays" style="transform-origin:${cx}px 62px">${[0, 1, 2, 3, 4, 5, 6, 7].map((k) => `<path d="M${cx} 62 L${cx - 3} 22 L${cx + 3} 22Z" fill="${P.mustard}" opacity=".55" transform="rotate(${k * 45} ${cx} 62)"/>`).join("")}</g>`;
       const pts = []; for (let i = 0; i < 10; i++) { const a = (i * Math.PI) / 5 - Math.PI / 2, r = i % 2 ? 8 : 19; pts.push((cx + r * Math.cos(a)).toFixed(1) + "," + (62 + r * Math.sin(a)).toFixed(1)); }
       s += `<polygon class="star" points="${pts.join(" ")}" fill="${P.mustard}" style="transform-origin:${cx}px 62px"/>`;
-      // presents
       const gift = (x, w, h, c, r) => `<rect x="${x}" y="${base + 6 - h}" width="${w}" height="${h}" rx="2" fill="${c}"/><rect x="${x + w / 2 - 3}" y="${base + 6 - h}" width="6" height="${h}" fill="${r}"/><path d="M${x + w / 2} ${base + 6 - h} c-10 -12 -18 -4 -12 0Z M${x + w / 2} ${base + 6 - h} c10 -12 18 -4 12 0Z" fill="${r}"/>`;
       s += gift(138, 40, 30, P.red, P.mustard) + gift(176, 30, 22, P.sky, P.red) + gift(226, 44, 34, P.sage, P.red) + gift(266, 30, 24, P.pink, P.navy);
       return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${s}</svg>`;
@@ -307,7 +450,7 @@
       const fit = () => { const r = devicePixelRatio || 1; cv.width = cv.clientWidth * r; cv.height = cv.clientHeight * r; g.setTransform(r, 0, 0, r, 0, 0); };
       fit(); addEventListener("resize", fit);
       const W = () => cv.clientWidth, H = () => cv.clientHeight;
-      const snow = () => ({ k: "s", x: Math.random() * W(), y: -10 - Math.random() * H(), r: 1.2 + Math.random() * 2.8, vy: 0.6 + Math.random() * 1.2, w: Math.random() * 6 });
+      const snow = () => ({ k: "s", x: Math.random() * W(), y: -10 - Math.random() * H(), r: 1.2 + Math.random() * 2.8, vy: 0.6 + Math.random() * 1.2, w: Math.random() * 6, rot: Math.random() * 6, star: Math.random() < 0.35 });
       for (let i = 0; i < 110; i++) { const p = snow(); p.y = Math.random() * H(); parts.push(p); }
       const conf = [P.red, P.mustard, P.mint, P.pink, P.cream];
       const burst = () => { if (still) return; for (let i = 0; i < 140; i++) parts.push({ k: "c", x: W() / 2, y: H() * 0.32, vx: (Math.random() - 0.5) * 9, vy: -3 - Math.random() * 7, r: 3 + Math.random() * 4, a: Math.random() * 6, va: (Math.random() - 0.5) * 0.3, c: conf[i % conf.length], life: 220 }); };
@@ -316,9 +459,10 @@
         g.clearRect(0, 0, W(), H());
         parts = parts.filter((p) => {
           if (p.k === "s") {
-            p.y += still ? 0 : p.vy; p.w += 0.02; p.x += Math.sin(p.w) * 0.4;
+            p.y += still ? 0 : p.vy; p.w += 0.02; p.x += Math.sin(p.w) * 0.4; p.rot += 0.01;
             if (p.y > H() + 5) Object.assign(p, snow(), { y: -5 });
-            g.globalAlpha = 0.9; g.fillStyle = "#fff"; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.28); g.fill();
+            g.globalAlpha = 0.9;
+            if (p.star) drawFlake(g, p.x, p.y, p.r * 2.2, p.rot, "#fff"); else { g.fillStyle = "#fff"; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.28); g.fill(); }
             return true;
           }
           p.vy += 0.16; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.a += p.va; p.life--;
@@ -329,6 +473,7 @@
       })();
       return { burst, stop: () => { run = false; removeEventListener("resize", fit); } };
     }
+
     function sheet(html, onClose) {
       const el = document.createElement("div");
       el.className = "sheet"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
@@ -358,52 +503,6 @@
           <span><b>${esc(m.label)}</b><small>${esc(m.ages)}</small><em>${esc(m.blurb)}</em></span>
         </button>`).join("")}</div>`;
     }
-
-    function openParent() {
-      const rows = T.clues.map((c) => `<li>
-          <span class="num">${c.n}</span>
-          <span class="where">${esc(c.hideAt)}<small>${isSolved(c.n) ? "Found · letter " + esc(c.letter) : "Not found yet"}</small></span>
-          <span class="mini-code">${c.code.map((s) => icon(sym(s).svg())).join("")}</span>
-          ${isSolved(c.n) ? "" : `<button class="ghost" data-skip="${c.n}">Skip</button>`}
-        </li>`).join("");
-      const el = sheet(`
-        <div class="inner parent">
-          <p class="kicker">Grown-ups only</p>
-          <h2>Hunt controls</h2>
-          <h3>Who's playing?</h3>
-          ${modeButtons(state.mode)}
-          <h3>The surprise under the tree</h3>
-          ${surpriseField()}
-          <h3>Voice</h3>
-          <p class="note" style="margin:0 0 6px" id="voiceNote"></p>
-          ${canSpeak ? '<button class="ghost" id="testVoice">Test the voice</button>' : ""}
-          <h3>Clues &amp; codes</h3>
-          <p class="note" style="margin:0 0 4px">Lost a card? Every code is below. Skip unlocks a clue without its code.</p>
-          <ul class="plist">${rows}</ul>
-          <div class="row">
-            <button class="ghost danger" id="reset">Reset the whole hunt</button>
-            <button class="btn green" data-close>Done</button>
-          </div>
-        </div>`);
-      el.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => {
-        state.mode = b.dataset.mode; save();
-        el.querySelectorAll("[data-mode]").forEach((x) => x.classList.toggle("on", x === b));
-        render();
-      }));
-      bindSurprise(el);
-      const vn = el.querySelector("#voiceNote"), v = canSpeak ? pickVoice() : null;
-      vn.textContent = !canSpeak ? "This phone can't read aloud." : v && /serena/i.test(v.name) ? "Using " + v.name + ". Lovely." :
-        "Using " + (v ? v.name : "the default voice") + ". For the best voice on iPhone: Settings → Accessibility → Spoken Content → Voices → English → download Serena (Premium).";
-      const tv = el.querySelector("#testVoice"); if (tv) tv.onclick = () => speak(T.welcome.heading);
-      el.querySelectorAll("[data-skip]").forEach((b) => (b.onclick = () => { el.remove(); solve(T.clues.find((c) => c.n === +b.dataset.skip)); }));
-      const r = el.querySelector("#reset");
-      let armed = false;
-      r.onclick = () => {
-        if (!armed) { armed = true; r.textContent = "Tap again to erase progress"; return; }
-        state.solved = []; state.welcomed = false; save(); el.remove(); render(); welcome();
-      };
-    }
-
     function surpriseField() {
       const S = T.surprise;
       return `<div class="surprise-field">
@@ -418,60 +517,210 @@
       inp.addEventListener("input", () => set(inp.value));
       el.querySelectorAll("[data-idea]").forEach((c) => (c.onclick = () => { inp.value = c.dataset.idea; set(inp.value); }));
     }
+    const voiceBlock = () => `<h3>Voice</h3><p class="note" style="margin:0 0 8px" id="voiceNote"></p>${canSpeak ? '<button class="ghost small" id="testVoice">Test the voice</button>' : ""}`;
+    function bindVoice(el) {
+      const vn = el.querySelector("#voiceNote"); if (!vn) return;
+      const set = () => {
+        const v = canSpeak ? pickVoice() : null;
+        vn.textContent = !canSpeak ? "This phone can't read aloud." : v && /serena/i.test(v.name) ? "Using " + v.name + ". Lovely." :
+          "Using " + (v ? v.name : "the default voice") + ". For the best voice on iPhone: Settings → Accessibility → Spoken Content → Voices → English → English (UK) → download Serena (Premium).";
+      };
+      set(); setTimeout(set, 800);
+      const tv = el.querySelector("#testVoice"); if (tv) tv.onclick = () => speak("Ho ho ho! Merry Christmas. The magic is ready.");
+    }
 
-    function welcome() {
-      if (state.welcomed && state.mode) return;
+    function openParent() {
+      const rows = T.clues.map((c) => `<li>
+          <span class="num">${c.n}</span>
+          <span class="where">${esc(c.hideAt)}<small>${isSolved(c.n) ? "Found · letter " + esc(c.letter) : "Not found yet"}</small></span>
+          <span class="mini-code">${c.code.map((s) => icon(sym(s).svg())).join("")}</span>
+          ${isSolved(c.n) || !state.namesDone ? "" : `<button class="ghost" data-skip="${c.n}">Skip</button>`}
+        </li>`).join("");
       const el = sheet(`
-        <div class="inner">
-          <p class="kicker">A letter from ${esc(T.character.name)}</p>
-          <h2>${esc(T.welcome.heading)}</h2>
-          <p class="say">${esc(T.welcome.body)}</p>
-          <div class="setup">
-            <p class="kicker" style="color:var(--navy)">Grown-ups: quick setup</p>
-            <h3>Who's playing?</h3>
-            ${modeButtons(state.mode)}
-            <h3>The surprise under the tree</h3>
-            ${surpriseField()}
+        <div class="inner parent">
+          <p class="kicker">Grown-ups only</p>
+          <h2>Hunt controls</h2>
+          ${!state.unlocked && state.setupDone ? `<div class="row"><button class="btn green" id="forceUnlock">Unlock without the password</button></div>` : ""}
+          <h3>Who's playing?</h3>
+          ${modeButtons(state.mode)}
+          <h3>Finders' names</h3>
+          <input id="namesEdit" class="text-in" type="text" maxlength="80" placeholder="e.g. Isla, Hela" value="${esc(state.names.join(", "))}">
+          <p class="note" style="margin:4px 0 0">Separate names with commas.</p>
+          <h3>The surprise under the tree</h3>
+          ${surpriseField()}
+          ${voiceBlock()}
+          <h3>Clues &amp; codes</h3>
+          <p class="note" style="margin:0 0 4px">Lost a card? Every code is below. Skip unlocks a clue without its code.</p>
+          <ul class="plist">${rows}</ul>
+          <div class="row">
+            ${state.namesDone ? `<button class="ghost" id="replayFirst">Replay the first riddle</button>` : ""}
+            <button class="ghost danger" id="reset">Reset the hunt</button>
+            <button class="btn green" data-close>Done</button>
           </div>
-          <p class="note">You can change these any time from Grown-ups.</p>
-          <button class="btn" data-close id="go" ${state.mode ? "" : "disabled"}>${esc(T.welcome.button)}</button>
-        </div>`, () => { if (!state.mode) state.mode = "big"; state.welcomed = true; save(); render(); play("tap"); if (little()) speak(T.welcome.heading + " " + T.welcome.body); });
+        </div>`, () => render());
       el.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => {
         state.mode = b.dataset.mode; save();
         el.querySelectorAll("[data-mode]").forEach((x) => x.classList.toggle("on", x === b));
-        el.querySelector("#go").disabled = false;
       }));
-      bindSurprise(el);
+      el.querySelector("#namesEdit").addEventListener("input", (e) => {
+        state.names = e.target.value.split(",").map((s) => s.trim().slice(0, 20)).filter(Boolean).slice(0, 4); save();
+      });
+      bindSurprise(el); bindVoice(el);
+      const fu = el.querySelector("#forceUnlock"); if (fu) fu.onclick = () => { el.remove(); state.unlocked = true; save(); render(); };
+      const rf = el.querySelector("#replayFirst"); if (rf) rf.onclick = () => { el.remove(); render(); showFirstRiddle(); };
+      el.querySelectorAll("[data-skip]").forEach((b) => (b.onclick = () => { el.remove(); solve(T.clues.find((c) => c.n === +b.dataset.skip)); }));
+      const r = el.querySelector("#reset");
+      let armed = false;
+      r.onclick = () => {
+        if (!armed) { armed = true; r.textContent = "Tap again to start over"; return; }
+        Object.assign(state, { solved: [], unlocked: false, namesDone: false, firstSeen: false, turn: 0 }); save(); el.remove(); render();
+      };
     }
 
-    // ---------- Gentle snowfall (skipped for reduced motion)
+    // ---------- Background snowfall: little flakes and dots drifting over the page
     const cv = document.getElementById("snow"), g = cv.getContext("2d");
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let flakes = [];
+    function drawFlake(c, x, y, r, rot, color) {
+      c.save(); c.translate(x, y); c.rotate(rot); c.strokeStyle = color; c.lineWidth = Math.max(1, r * 0.18); c.lineCap = "round";
+      c.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3, ca = Math.cos(a), sa = Math.sin(a);
+        c.moveTo(0, 0); c.lineTo(ca * r, sa * r);
+        const bx = ca * r * 0.55, by = sa * r * 0.55, b = r * 0.28;
+        c.moveTo(bx, by); c.lineTo(bx + Math.cos(a + 0.7) * b, by + Math.sin(a + 0.7) * b);
+        c.moveTo(bx, by); c.lineTo(bx + Math.cos(a - 0.7) * b, by + Math.sin(a - 0.7) * b);
+      }
+      c.stroke(); c.restore();
+    }
     const resize = () => { const r = devicePixelRatio || 1; cv.width = innerWidth * r; cv.height = innerHeight * r; g.setTransform(r, 0, 0, r, 0, 0); };
-    const mk = (y) => ({ x: Math.random() * innerWidth, y: y != null ? y : Math.random() * innerHeight, r: 1 + Math.random() * 2.2, s: 0.25 + Math.random() * 0.55, w: Math.random() * 6.28 });
-    function snowBurst() { for (let i = 0; i < 70; i++) flakes.push(Object.assign(mk(-Math.random() * 300), { s: 1 + Math.random() * 1.5, burst: true })); }
+    const mk = (y) => {
+      const star = Math.random() < 0.45;
+      return { x: Math.random() * innerWidth, y: y != null ? y : Math.random() * innerHeight, r: star ? 4 + Math.random() * 4 : 1 + Math.random() * 2, star,
+        s: 0.25 + Math.random() * 0.5, w: Math.random() * 6.28, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.02 };
+    };
+    function snowBurst() { if (still) return; for (let i = 0; i < 34; i++) flakes.push(Object.assign(mk(-Math.random() * 240), { s: 2.4 + Math.random() * 2, burst: true, star: true, r: 5 + Math.random() * 4 })); }
     if (!still) {
       resize(); addEventListener("resize", resize);
-      for (let i = 0; i < 26; i++) flakes.push(mk());
+      for (let i = 0; i < 22; i++) flakes.push(mk());
       (function loop() {
         g.clearRect(0, 0, innerWidth, innerHeight);
         flakes = flakes.filter((f) => {
-          f.y += f.s; f.w += 0.02; f.x += Math.sin(f.w) * 0.3;
-          if (f.y > innerHeight + 5) { if (f.burst) return false; Object.assign(f, mk(-5)); }
-          g.beginPath(); g.arc(f.x, f.y, f.r, 0, 6.28);
-          g.fillStyle = f.burst ? P.red : "rgba(150,150,178,.55)"; g.fill();
+          f.y += f.s; f.w += 0.02; f.x += Math.sin(f.w) * 0.3; f.rot += f.vr;
+          if (f.y > innerHeight + 10) { if (f.burst) return false; Object.assign(f, mk(-10)); }
+          const col = f.burst ? P.mustard : "rgba(140,152,190,.6)";
+          if (f.star) drawFlake(g, f.x, f.y, f.r, f.rot, col);
+          else { g.beginPath(); g.arc(f.x, f.y, f.r, 0, 6.28); g.fillStyle = col; g.fill(); }
           return true;
         });
         requestAnimationFrame(loop);
       })();
     }
 
+    // ---------- The hidden mouse. Every so often he scampers along the bottom or peeks in from the side.
+    // Tap him and he squeaks. Kids who keep looking spot him more.
+    function mouseSvg(mini) {
+      const body = "#a1958c", dark = "#6f655e";
+      return `<svg viewBox="0 0 70 44" aria-hidden="true" class="${mini ? "mini" : ""}">
+        <path class="tail" d="M12 30 C2 30 0 20 6 16 C9 14 10 18 7 20" fill="none" stroke="${P.tan}" stroke-width="2.6" stroke-linecap="round"/>
+        <g class="legs"><ellipse cx="22" cy="38" rx="4" ry="2.6" fill="${dark}"/><ellipse cx="38" cy="38" rx="4" ry="2.6" fill="${dark}"/></g>
+        <ellipse cx="30" cy="28" rx="19" ry="11.5" fill="${body}"/>
+        <path d="M44 20 C52 16 60 20 66 25 C60 29 52 32 44 30Z" fill="${body}"/>
+        <circle cx="66" cy="25" r="2.6" fill="${P.red}"/>
+        <circle cx="45" cy="13" r="7" fill="${body}"/><circle cx="45" cy="13" r="4.2" fill="${P.pink}"/>
+        <circle cx="54" cy="21" r="1.9" fill="${P.ink}"/><circle cx="54.6" cy="20.4" r=".6" fill="#fff"/>
+        <path d="M62 26 L70 24 M62 27 L70 29" stroke="${dark}" stroke-width=".8" stroke-linecap="round"/>
+        <path d="M34 19 C38 24 44 25 48 22" fill="none" stroke="${P.red}" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M37 22 L34 30" stroke="${P.red}" stroke-width="3" stroke-linecap="round"/>
+      </svg>`;
+    }
+    (function mouse() {
+      const m = document.createElement("button");
+      m.className = "mouse"; m.type = "button"; m.setAttribute("aria-label", "A little mouse! Tap him.");
+      m.innerHTML = `<span class="body">${mouseSvg()}</span><span class="squeak">Squeak!</span>`;
+      m.hidden = true;
+      document.body.appendChild(m);
+      let anim = null, busy = false, dir = 1;
+      const blocked = () => document.hidden || document.querySelector(".sheet, .finale");
+      function schedule(ms) { setTimeout(appear, ms != null ? ms : 14000 + Math.random() * 16000); }
+      function done() { busy = false; m.hidden = true; m.classList.remove("running", "caught", "peek"); schedule(); }
+      function appear() {
+        if (blocked()) return schedule(5000);
+        busy = true; m.hidden = false;
+        const W = innerWidth, peek = still || Math.random() < 0.4;
+        dir = Math.random() < 0.5 ? 1 : -1;
+        m.style.setProperty("--dir", dir);
+        if (peek) {
+          // peek in from a side edge, halfway up, then retreat
+          const fromLeft = dir === 1, y = innerHeight * (0.3 + Math.random() * 0.45);
+          m.style.top = y + "px"; m.style.bottom = "auto";
+          m.style.left = fromLeft ? "-70px" : W + "px";
+          m.classList.add("peek");
+          const out = fromLeft ? 44 : -44;
+          anim = still
+            ? m.animate([{ opacity: 0, transform: `translateX(${out}px) scaleX(${dir})` }, { opacity: 1, offset: 0.15 }, { opacity: 1, offset: 0.85 }, { opacity: 0, transform: `translateX(${out}px) scaleX(${dir})` }], { duration: 3200, fill: "both" })
+            : m.animate([
+                { transform: `translateX(0) scaleX(${dir})` },
+                { transform: `translateX(${out}px) scaleX(${dir})`, offset: 0.18 },
+                { transform: `translateX(${out}px) scaleX(${dir})`, offset: 0.82 },
+                { transform: `translateX(0) scaleX(${dir})` }], { duration: 3000, easing: "ease-in-out", fill: "both" });
+        } else {
+          // scamper along the bottom, stop for a sniff in the middle, then dash off
+          m.style.top = "auto"; m.style.bottom = `calc(${28 + Math.random() * 10}px + env(safe-area-inset-bottom))`;
+          m.style.left = dir === 1 ? "-80px" : W + 10 + "px";
+          const dist = (W + 90) * dir;
+          m.classList.add("running");
+          anim = m.animate([
+            { transform: `translateX(0) scaleX(${dir})` },
+            { transform: `translateX(${dist * 0.45}px) scaleX(${dir})`, offset: 0.38 },
+            { transform: `translateX(${dist * 0.47}px) scaleX(${dir})`, offset: 0.62 },
+            { transform: `translateX(${dist}px) scaleX(${dir})` }], { duration: 5200, easing: "linear", fill: "both" });
+          anim.onfinish = null;
+          setTimeout(() => m.classList.remove("running"), 5200 * 0.38);
+          setTimeout(() => m.classList.add("running"), 5200 * 0.62);
+        }
+        anim.onfinish = done;
+      }
+      m.addEventListener("click", () => {
+        if (!busy || m.classList.contains("caught")) return;
+        play("squeak"); if (navigator.vibrate) navigator.vibrate(20);
+        m.classList.add("caught");
+        state.mice = (state.mice || 0) + 1; save();
+        const mc = document.getElementById("miceCount"); if (mc) { mc.hidden = false; mc.querySelector("span").textContent = state.mice; }
+        const cur = new DOMMatrix(getComputedStyle(m).transform).m41;
+        anim.onfinish = null; anim.cancel();
+        m.style.transform = `translateX(${cur}px) scaleX(${dir})`;
+        // hop, then dash back the way he came
+        setTimeout(() => {
+          m.classList.add("running");
+          const away = cur + (m.classList.contains("peek") ? -Math.sign(cur || dir) * 140 : dir * (innerWidth + 120));
+          const fd = m.classList.contains("peek") ? -dir : dir;
+          anim = m.animate([{ transform: `translateX(${cur}px) scaleX(${fd})` }, { transform: `translateX(${away}px) scaleX(${fd})` }], { duration: 700, easing: "ease-in", fill: "both" });
+          anim.onfinish = done;
+        }, 650);
+      });
+      schedule(7000);
+    })();
+
+    function flake() {
+      let a = "";
+      for (let i = 0; i < 6; i++) a += `<g transform="rotate(${i * 60} 50 50)"><path d="M50 50 V10 M50 26 L40 18 M50 26 L60 18" stroke="${P.navy}" stroke-width="7" stroke-linecap="round" fill="none"/></g>`;
+      return a + `<circle cx="50" cy="50" r="8" fill="${P.red}"/>`;
+    }
+    function padlockSvg() {
+      return `<svg viewBox="0 0 120 130" aria-hidden="true">
+        <path class="shackle" d="M34 62 V40 C34 20 48 10 60 10 C72 10 86 20 86 40 V62" fill="none" stroke="${P.tan}" stroke-width="11" stroke-linecap="round"/>
+        <rect x="18" y="56" width="84" height="66" rx="12" fill="${P.red}"/>
+        <rect x="18" y="56" width="84" height="12" rx="6" fill="${P.redDeep}" opacity=".35"/>
+        <path d="M28 98 l6 -6 6 6 6 -6 6 6 6 -6 6 6 6 -6 6 6 6 -6 6 6 6 -6" fill="none" stroke="${P.cream}" stroke-width="2.4" opacity=".7"/>
+        <circle cx="60" cy="82" r="8" fill="${P.navyDeep}"/><rect x="56.5" y="84" width="7" height="14" rx="3" fill="${P.navyDeep}"/>
+        <circle cx="30" cy="68" r="3" fill="${P.cream}" opacity=".5"/>
+      </svg>`;
+    }
     function iconSound() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>'; }
     function iconMute() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'; }
     function iconKey() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2"/></svg>'; }
 
     render();
-    welcome();
+    if (state.unlocked && state.namesDone && !state.firstSeen) showFirstRiddle();
   }
 })();
