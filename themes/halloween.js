@@ -97,6 +97,15 @@
 
     voiceFiles: true,
     audioVersion: 1,
+    // Built-in background music: an original spooky (not scary) waltz in A minor on a celesta.
+    music: {
+      bpm: 104, beatsPerBar: 3, voice: "celesta", volume: 1.0, restBeats: 3,
+      melody: [[69,1],[72,1],[76,1],[74,2],[72,1],[71,1],[68,1],[71,1],[64,3],
+               [69,1],[72,1],[76,1],[77,1],[76,1],[74,1],[72,1],[71,1],[68,1],[69,3],
+               [72,1],[76,1],[81,1],[79,2],[77,1],[76,1],[74,1],[72,1],[71,3],
+               [74,1],[77,1],[81,1],[80,2],[76,1],[81,1],[76,1],[72,1],[69,3]],
+      bass: [45, 50, 40, 40, 45, 50, 40, 45, 45, 48, 45, 40, 50, 40, 45, 45],
+    },
     sounds: { tap: "plink", correct: "spooky", wrong: "thud", finale: "spookyFinale", unlock: "spookyUnlock", critter: "squeak" },
     particles: "leaves", // falling autumn leaves instead of snow
     critter: { kind: "cat", label: "A little black cat! Tap her.", sound: "Meow!", preset: "meow", file: "meow.mp3" }, // add audio/halloween/meow.mp3 to use a recorded meow; otherwise a synthesised one plays

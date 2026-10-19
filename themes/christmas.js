@@ -104,6 +104,15 @@
     // Set to true once recordings are uploaded to site/audio/christmas/ (see VOICE-SCRIPT.md).
     voiceFiles: true,
     audioVersion: 2, // bump when you replace recordings, so phones fetch the new ones
+    // Built-in background music: "Jingle Bells" chorus (James Lord Pierpont, 1857, public domain) on a music box.
+    music: {
+      bpm: 116, beatsPerBar: 4, voice: "musicbox", volume: 0.9, restBeats: 4,
+      melody: [[76,1],[76,1],[76,2],[76,1],[76,1],[76,2],[76,1],[79,1],[72,1.5],[74,.5],[76,4],
+               [77,1],[77,1],[77,1.5],[77,.5],[77,1],[76,1],[76,1],[76,.5],[76,.5],[76,1],[74,1],[74,1],[76,1],[74,2],[79,2],
+               [76,1],[76,1],[76,2],[76,1],[76,1],[76,2],[76,1],[79,1],[72,1.5],[74,.5],[76,4],
+               [77,1],[77,1],[77,1],[77,1],[77,1],[76,1],[76,1],[76,.5],[76,.5],[79,1],[79,1],[77,1],[74,1],[72,4]],
+      bass: [48, 48, 48, 48, 53, 48, 50, 55, 48, 48, 48, 48, 53, 48, 55, 48],
+    },
     sounds: { tap: "bell", correct: "sleighbells", wrong: "thud", finale: "carillon" },
 
     // Two ways to play. The printed cards are the same; the app adapts.

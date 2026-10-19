@@ -54,7 +54,7 @@
     // ---------- Saved progress (per theme). Storage can be unavailable (private mode): the game still works.
     const KEY = "hunt:" + T.id + ":v3";
     let state = { mode: null, paint: true, surprise: "", setupDone: false, unlocked: false, namesDone: false, firstSeen: false,
-      names: [], turn: 0, solved: [], muted: false, mice: 0 };
+      names: [], turn: 0, solved: [], muted: false, mice: 0, music: true };
     try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch (e) {}
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
     const little = () => state.mode === "little";
@@ -71,14 +71,14 @@
       return ctx;
     };
     document.addEventListener("visibilitychange", () => { if (!document.hidden && ctx) { try { ctx.resume(); } catch (e) {} } });
-    function tone(freq, t0, dur, type = "sine", gain = 0.2, toFreq) {
+    function tone(freq, t0, dur, type = "sine", gain = 0.2, toFreq, dest) {
       const c = audio(); if (!c) return;
       const o = c.createOscillator(), g = c.createGain();
       o.type = type; o.frequency.setValueAtTime(freq, t0);
       if (toFreq) o.frequency.exponentialRampToValueAtTime(toFreq, t0 + dur * 0.6);
       g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.008);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      o.connect(g).connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+      o.connect(g).connect(dest || c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
     }
     function noise(t0, dur, freq, gain) {
       const c = audio(); if (!c) return;
@@ -160,11 +160,15 @@
           const v = pickVoice();
           if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-GB";
           u.rate = 0.95; u.pitch = 1;
+          u.onstart = () => duck(true); u.onend = u.onerror = () => duck(false);
           speechSynthesis.speak(u);
         }, 120);
       } catch (e) {}
     }
     const player = new Audio(); player.preload = "auto";
+    // Music gets quieter while the narrator talks, then comes back up.
+    player.addEventListener("playing", () => { if (!player.muted) duck(true); });
+    ["ended", "pause", "error"].forEach((ev) => player.addEventListener(ev, () => setTimeout(() => { if (player.paused || player.ended) duck(false); }, 250)));
     let queue = [];
     function playNext() {
       const part = queue.shift(); if (!part) return;
@@ -195,12 +199,9 @@
     }
     // First tap anywhere: wake up Web Audio, the recorded-voice player and speech (iPhone/iPad need this).
     let audioUnlocked = false;
-    // iPhone/iPad (Safari 17+): let the game's voice and sounds play OVER other apps' music (e.g. Spotify)
-    // instead of pausing it. Other apps duck briefly while the narrator talks. Older iOS ignores this.
-    try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
     function unlockAudio() {
       if (audioUnlocked) return; audioUnlocked = true;
-      try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
+      setTimeout(startMusic, 400);
       const c = audio();
       if (c) { try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch (e) {} }
       try { player.muted = true; player.src = silentWav();
@@ -210,6 +211,57 @@
     }
     ["pointerdown", "touchend", "click", "keydown"].forEach((ev) => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
     const riddleText = (lines) => lines.join(" ");
+
+    // ---------- Built-in background music (no Spotify needed: phones won't play another app's music
+    // alongside a web page's voice). A gentle music-box tune from the theme, looped, synthesised live.
+    // It ducks under the narrator and stops with "Sound off" or the Music button.
+    let bus = null, mTimer = null, mNext = 0, mIdx = 0, mLoopStart = 0, ducked = false;
+    const MUS = T.music || null, mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    const musicLevel = () => (ducked ? 0.22 : 1) * (MUS ? MUS.volume || 0.5 : 0);
+    function duck(on) { ducked = on; if (bus && ctx) { try { bus.gain.setTargetAtTime(musicLevel(), ctx.currentTime, on ? 0.08 : 0.5); } catch (e) {} } }
+    const events = (() => {
+      if (!MUS) return { list: [], len: 0 };
+      const list = []; let b = 0;
+      MUS.melody.forEach(([m, d]) => { if (m != null) list.push({ t: b, f: mtof(m), d, k: "m" }); b += d; });
+      const bpb = MUS.beatsPerBar || 4, bars = Math.ceil(b / bpb);
+      (MUS.bass || []).slice(0, bars).forEach((root, i) => {
+        list.push({ t: i * bpb, f: mtof(root), d: 1, k: "b" });
+        (bpb === 3 ? [1, 2] : [2]).forEach((x) => list.push({ t: i * bpb + x, f: mtof(root + (bpb === 3 ? 12 : 7)), d: 1, k: "c" }));
+      });
+      list.sort((a, b2) => a.t - b2.t);
+      return { list, len: bars * bpb + (MUS.restBeats || 0) };
+    })();
+    function note(e, t, spb) {
+      const v = MUS.voice || "musicbox";
+      if (e.k === "m") {
+        if (v === "celesta") { tone(e.f, t, 1.6, "sine", 0.07, null, bus); tone(e.f * 2, t, 0.5, "sine", 0.018, null, bus); tone(e.f * 3.01, t, 0.25, "triangle", 0.01, null, bus); }
+        else { tone(e.f, t, 1.2, "sine", 0.075, null, bus); tone(e.f * 2.76, t, 0.35, "sine", 0.02, null, bus); tone(e.f * 5.4, t, 0.12, "sine", 0.008, null, bus); }
+      } else tone(e.f, t, Math.min(0.6, spb * 0.9), "triangle", e.k === "b" ? 0.05 : 0.025, null, bus);
+    }
+    function schedule() {
+      const c = ctx; if (!c || !bus || !events.list.length) return;
+      if (c.state !== "running") return;
+      const spb = 60 / MUS.bpm;
+      if (mNext < c.currentTime) { mLoopStart = c.currentTime + 0.1 - (events.list[mIdx] ? events.list[mIdx].t * spb : 0); mNext = c.currentTime + 0.1; }
+      while (mNext < c.currentTime + 0.5) {
+        const e = events.list[mIdx]; note(e, mLoopStart + e.t * spb, spb);
+        mIdx++;
+        if (mIdx >= events.list.length) { mIdx = 0; mLoopStart += events.len * spb; }
+        mNext = mLoopStart + events.list[mIdx].t * spb;
+      }
+    }
+    function startMusic() {
+      if (!MUS || !state.music || state.muted || mTimer) return;
+      const c = audio(); if (!c) return;
+      if (!bus) { bus = c.createGain(); bus.gain.value = 0; bus.connect(c.destination); }
+      bus.gain.setTargetAtTime(musicLevel(), c.currentTime, 0.8);
+      mNext = 0; mTimer = setInterval(schedule, 120); schedule();
+    }
+    function stopMusic() {
+      if (mTimer) { clearInterval(mTimer); mTimer = null; }
+      if (bus && ctx) { try { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.15); } catch (e) {} }
+    }
+    document.addEventListener("visibilitychange", () => { if (document.hidden) stopMusic(); else if (audioUnlocked) startMusic(); });
 
     // ---------- Shared page chrome
     function frame(inner, { eyebrow, title, sub, heroH = 150 } = {}) {
@@ -223,11 +275,14 @@
         ${inner}
         <footer>
           <button class="tiny" id="mute">${state.muted ? iconMute() : iconSound()}<span>${state.muted ? "Sound off" : "Sound on"}</span></button>
+          ${MUS ? `<button class="tiny" id="musicBtn" aria-pressed="${state.music && !state.muted}">${iconNote()}<span>${state.music ? "Music on" : "Music off"}</span></button>` : ""}
           <span class="mice-count" id="miceCount" ${state.mice ? "" : "hidden"}>${mouseSvg(true)}<span>${state.mice}</span></span>
           <button class="tiny" id="grownups" aria-label="Grown-ups: press and hold">${iconKey()}<span>Grown-ups (hold)</span><i class="hold-ring"></i></button>
         </footer>
         <div class="foot-art">${M.pineRow(P, { w: 900, h: 60 })}</div>`;
-      document.getElementById("mute").onclick = () => { state.muted = !state.muted; save(); if (state.muted) stopSpeaking(); render(); if (!state.muted) play("tap"); };
+      document.getElementById("mute").onclick = () => { state.muted = !state.muted; save(); if (state.muted) { stopSpeaking(); stopMusic(); } else startMusic(); render(); if (!state.muted) play("tap"); };
+      const mb = document.getElementById("musicBtn");
+      if (mb) mb.onclick = () => { state.music = !state.music; save(); if (state.music) { if (state.muted) { state.muted = false; save(); } startMusic(); } else stopMusic(); render(); };
       holdToOpen(document.getElementById("grownups"), openParent);
     }
 
@@ -904,6 +959,7 @@
     }
     function iconSound() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>'; }
     function iconMute() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'; }
+    function iconNote() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>'; }
     function iconKey() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v2"/></svg>'; }
 
     render();
