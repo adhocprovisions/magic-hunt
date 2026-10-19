@@ -779,14 +779,17 @@
     // Tap him and he squeaks. Kids who keep looking spot him more.
     function mouseSvg(mini) {
       if (critter.kind === "cat") return `<svg viewBox="0 0 70 44" aria-hidden="true" class="${mini ? "mini" : ""}">
-        <path class="tail" d="M12 26 C4 24 2 14 6 6 C8 3 11 5 9 8 C7 13 8 18 12 20" fill="none" stroke="${P.ink}" stroke-width="3.6" stroke-linecap="round"/>
-        <g class="legs"><rect x="16" y="32" width="4" height="10" rx="2" fill="${P.ink}"/><rect x="24" y="32" width="4" height="10" rx="2" fill="${P.ink}"/><rect x="38" y="32" width="4" height="10" rx="2" fill="${P.ink}"/><rect x="46" y="32" width="4" height="10" rx="2" fill="${P.ink}"/></g>
-        <ellipse cx="31" cy="27" rx="20" ry="9.5" fill="${P.ink}"/>
-        <circle cx="54" cy="19" r="9" fill="${P.ink}"/><path d="M47 13 L48 3 L54 10Z M56 10 L62 3 L62 14Z" fill="${P.ink}"/>
-        <ellipse cx="51.5" cy="18" rx="2.2" ry="1.7" fill="${P.mustard}"/><ellipse cx="58" cy="18" rx="2.2" ry="1.7" fill="${P.mustard}"/>
-        <circle cx="51.8" cy="18" r=".8" fill="${P.ink}"/><circle cx="58.3" cy="18" r=".8" fill="${P.ink}"/>
-        <path d="M60 22 L69 20 M60 23.5 L69 25" stroke="${P.tan}" stroke-width=".7" stroke-linecap="round"/>
-        <path d="M23 21 Q31 25 39 21" stroke="${P.red}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path class="tail" d="M12 28 C3 26 2 14 7 8 C9 6 12 8 10 11 C8 15 9 20 13 22" fill="none" stroke="${P.ink}" stroke-width="3.8" stroke-linecap="round"/>
+        <g class="legs"><ellipse cx="19" cy="39" rx="3.4" ry="4" fill="${P.ink}"/><ellipse cx="27" cy="39" rx="3.4" ry="4" fill="${P.ink}"/><ellipse cx="36" cy="39" rx="3.4" ry="4" fill="${P.ink}"/><ellipse cx="44" cy="39" rx="3.4" ry="4" fill="${P.ink}"/></g>
+        <ellipse cx="30" cy="30" rx="17" ry="9" fill="${P.ink}"/>
+        <path d="M44 12 L44 2 C45 1 50 5 52 8Z M64 12 L64 2 C63 1 58 5 56 8Z" fill="${P.ink}"/><path d="M45.5 9 L45.6 4.5 L49 7.5Z M62.5 9 L62.4 4.5 L59 7.5Z" fill="${P.pink}"/>
+        <ellipse cx="54" cy="18" rx="12.5" ry="11" fill="${P.ink}"/>
+        <ellipse cx="49" cy="18" rx="3.4" ry="3.8" fill="${P.mustard}"/><ellipse cx="59" cy="18" rx="3.4" ry="3.8" fill="${P.mustard}"/>
+        <ellipse cx="49.2" cy="18.4" rx="2.3" ry="2.9" fill="${P.roofLine}"/><ellipse cx="58.8" cy="18.4" rx="2.3" ry="2.9" fill="${P.roofLine}"/>
+        <circle cx="50.2" cy="16.8" r="1.1" fill="#fff"/><circle cx="59.8" cy="16.8" r="1.1" fill="#fff"/>
+        <ellipse cx="45" cy="23" rx="2.2" ry="1.3" fill="${P.pink}" opacity=".9"/><ellipse cx="63" cy="23" rx="2.2" ry="1.3" fill="${P.pink}" opacity=".9"/>
+        <path d="M51.5 23.5 Q52.7 25 54 23.5 Q55.3 25 56.5 23.5" stroke="${P.cream}" stroke-width=".9" fill="none" stroke-linecap="round"/>
+        <path d="M20 25 Q30 29 40 25" stroke="${P.red}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
       </svg>`;
       if (critter.kind === "bat") return `<svg viewBox="0 0 70 44" aria-hidden="true" class="${mini ? "mini" : ""}">
         <g class="legs wings"><path d="M35 22 C28 10 16 6 4 12 C10 14 12 18 12 22 C17 18 22 19 25 24 C28 21 32 21 35 24Z" fill="${P.navyDeep}"/>
