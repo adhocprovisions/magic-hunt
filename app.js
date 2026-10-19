@@ -8,7 +8,7 @@
   "use strict";
 
   // Add each new theme's file name (without .js) here.
-  const THEME_IDS = ["christmas"];
+  const THEME_IDS = ["christmas", "halloween"];
 
   const $app = document.getElementById("app");
   const params = new URLSearchParams(location.search);
@@ -38,6 +38,18 @@
     const icon = (svg) => `<svg viewBox="0 0 100 100" aria-hidden="true">${svg}</svg>`;
     const fill = (str, o) => String(str).replace(/\{(\w+)\}/g, (_, k) => (o[k] != null ? o[k] : ""));
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Theme wording the engine uses (Christmas defaults, so older theme files keep working).
+    const U = Object.assign({
+      letterName: "Santa's letter", secretLabel: "letter",
+      placeSurprise: "Put the surprise under the Christmas tree.",
+      leaveLetter: "Then leave Santa's letter at the front door, knock loudly (or ring the bell) and hide!",
+      lockButton: "Lock the Magic Finder", atFinale: "We're at the tree!", seeFinale: "See the magic!",
+      surpriseHeading: "The surprise under the tree", testLine: "Ho ho ho! Merry Christmas. The magic is ready.",
+      collectorNote: "Colour in ornament {n} on your Magic Collector.",
+      writeNote: "Write <b>{word}</b> in ornament <b>{n}</b> on your Magic Collector.",
+    }, T.ui || {});
+    const wordMode = U.secretLabel === "word";
+    const critter = Object.assign({ kind: "mouse", label: "A little mouse! Tap him.", sound: "Squeak!" }, T.critter || {});
 
     // ---------- Saved progress (per theme). Storage can be unavailable (private mode): the game still works.
     const KEY = "hunt:" + T.id + ":v3";
@@ -85,6 +97,13 @@
       carillon: (t) => { [1046, 1318, 1568, 2093, 1568, 2093].forEach((f, i) => bell(f, t + i * 0.16, 0.17)); PRESETS.sleighbells(t + 1); },
       squeak: (t) => { tone(2300, t, 0.09, "sine", 0.16, 3700); tone(2500, t + 0.13, 0.12, "sine", 0.15, 3900); tone(3100, t + 0.13, 0.08, "triangle", 0.04); },
       unlock: (t) => { tone(600, t, 0.08, "square", 0.06); tone(900, t + 0.09, 0.1, "square", 0.06); PRESETS.carillon(t + 0.2); },
+      // Spooky set (Halloween): minor-key chimes, a ghostly "whoo" glide and a creaky door.
+      plink: (t) => { bell(880, t, 0.1); tone(1320, t + 0.02, 0.3, "triangle", 0.03); },
+      whoo: (t) => { tone(330, t, 1.1, "sine", 0.06, 620); tone(336, t + 0.05, 1.1, "sine", 0.04, 610); },
+      spooky: (t) => { [440, 523, 659, 880].forEach((f, i) => bell(f, t + i * 0.09, 0.13)); PRESETS.whoo(t + 0.25); },
+      creak: (t) => { for (let i = 0; i < 9; i++) { noise(t + i * 0.045, 0.06, 500 + i * 40, 0.5); tone(110 + i * 12, t + i * 0.045, 0.07, "sawtooth", 0.02); } },
+      spookyFinale: (t) => { [440, 523, 659, 880, 659, 880, 1046].forEach((f, i) => bell(f, t + i * 0.15, 0.15)); PRESETS.whoo(t + 1.1); },
+      spookyUnlock: (t) => { PRESETS.creak(t); PRESETS.spookyFinale(t + 0.5); },
     };
     const play = (name) => {
       if (state.muted) return;
@@ -208,11 +227,11 @@
           <ol class="checklist">
             <li id="pwStep">${pwStep()}</li>
             <li>Hide the ${total} clue cards. Each card says where it goes.</li>
-            <li>Put the surprise under the Christmas tree.</li>
+            <li>${esc(U.placeSurprise)}</li>
           </ol>
           ${voiceBlock()}
-          <button class="btn wide" id="lockIt" ${state.mode ? "" : "disabled"}>Lock the Magic Finder</button>
-          <p class="note center">Then leave Santa's letter at the front door, knock loudly (or ring the bell) and hide!</p>
+          <button class="btn wide" id="lockIt" ${state.mode ? "" : "disabled"}>${esc(U.lockButton)}</button>
+          <p class="note center">${esc(U.leaveLetter)}</p>
         </section>`, { eyebrow: "Grown-ups only", title: "Set up the magic", sub: `<p class="lede">Two minutes before the knock on the door.</p>`, heroH: 120 });
       document.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => {
         state.mode = b.dataset.mode; save();
@@ -229,8 +248,8 @@
     }
 
     const pwStep = () => state.paint
-      ? `Write <b>${esc(T.password)}</b> in big letters on the back of Santa's letter with a white crayon. Press hard.`
-      : `Print Santa's letter double-sided. The password is already printed on the back.`;
+      ? `Write <b>${esc(T.password)}</b> in big letters on the back of ${esc(U.letterName)} with a white crayon. Press hard.`
+      : `Print ${esc(U.letterName)} double-sided. The password is already printed on the back.`;
     const lockBody = () => (state.paint ? T.lock.body : T.lock.bodyNoPaint);
     const lockWrong = () => (state.paint ? T.lock.wrong : T.lock.wrongNoPaint);
     // ---------- 2. Lock screen: the password from the back of Santa's letter
@@ -342,14 +361,15 @@
           <div class="ornaments" style="grid-template-columns:repeat(${total},1fr)">
             ${T.clues.map((c, i) => `<div class="orn ${isSolved(c.n) ? "done" : ""}">
               <div class="hang" style="height:${hang(i)}px"></div>${ornament(c.n, isSolved(c.n))}
-              <div class="ltr">${isSolved(c.n) ? (little() ? "★" : esc(c.letter)) : c.n}</div></div>`).join("")}
+              <div class="ltr">${isSolved(c.n) ? (little() ? "★" : wordMode ? "" : esc(c.letter)) : c.n}</div></div>`).join("")}
           </div>
         </section>
+        ${wordMode && !little() ? `<p class="spell-strip" aria-label="The spell so far">${T.clues.map((c) => isSolved(c.n) ? `<b>${esc(c.letter)}</b>` : `<i>__</i>`).join(" ")}</p>` : ""}
         <section class="panel">
           ${complete
             ? `<p class="prompt">All ten found! Last stop…</p>
                ${little() ? pictureClue(T.spots[T.clues[total - 1].next], "Go to") : riddleBox(T.clues[total - 1].riddle)}
-               <div class="row"><button class="btn" id="openFinale">${little() ? "See the magic!" : "We're at the tree!"}</button></div>`
+               <div class="row"><button class="btn" id="openFinale">${esc(little() ? U.seeFinale : U.atFinale)}</button></div>`
             : `${multi ? `<p class="turn-pill">${esc(fill(T.turn, { name: currentName() }))}</p>` : ""}
                ${done ? (little() ? lookBy() : `<div class="row" style="margin:0 0 12px"><button class="ghost small" id="seeRiddle">See your last riddle</button></div>`) : ""}
                <p class="prompt">${esc(T.prompt[state.mode || "big"])}</p>
@@ -422,7 +442,7 @@
         return;
       }
       entry = [];
-      if (isSolved(clue.n)) { drawSlots(); setMsg(little() ? T.already : `${T.already} Clue ${clue.n}'s letter is ${clue.letter}.`); play("tap"); return; }
+      if (isSolved(clue.n)) { drawSlots(); setMsg(little() ? T.already : `${T.already} Clue ${clue.n}'s ${U.secretLabel} is ${clue.letter}.`); play("tap"); return; }
       solve(clue);
     }
 
@@ -449,15 +469,15 @@
             <div class="row">${canSpeak || T.voiceFiles ? `<button class="ghost" data-speak>Hear it again</button>` : ""}
               <button class="btn" data-close>Off I go!</button></div>
             ${nextNote}
-            <p class="note">Colour in ornament ${clue.n} on your Magic Collector.</p>
+            <p class="note">${esc(fill(U.collectorNote, { n: clue.n }))}</p>
           </div>`
         : `<div class="inner">
             ${cheer ? `<p class="cheer">${esc(cheer)}</p>` : ""}
             <p class="kicker">Clue ${clue.n} of ${total} cracked</p>
-            <h2>Your secret letter is</h2>
-            <div class="secret">${esc(clue.letter)}</div>
+            <h2>${wordMode ? "Your spell word is" : "Your secret letter is"}</h2>
+            <div class="secret${wordMode ? " is-word" : ""}">${esc(clue.letter)}</div>
             <p class="say">“${esc(clue.unlock)}”</p>
-            <p class="note">Write <b>${esc(clue.letter)}</b> in ornament <b>${clue.n}</b> on your Magic Collector.</p>
+            <p class="note">${fill(U.writeNote, { word: esc(clue.letter), n: clue.n })}</p>
             <p class="kicker" style="margin-top:4px">${last ? "Your last riddle" : "Your next riddle"}</p>
             ${riddleBox(clue.riddle)}
             ${nextNote}
@@ -487,13 +507,15 @@
           <p class="kicker">${esc(T.title)}</p>
           <h2>${esc(heading)}</h2>
           ${lit
-            ? `<div class="flakes">${T.clues.map((c, i) => `<span style="animation-delay:${0.2 + i * 0.1}s">${icon(flake())}</span>`).join("")}</div>`
-            : `<div class="word">${T.finalWord.split("").map((l, i) => `<span style="animation-delay:${0.2 + i * 0.1}s">${esc(l)}</span>`).join("")}</div>`}
+            ? `<div class="flakes">${T.clues.map((c, i) => `<span style="animation-delay:${0.2 + i * 0.1}s">${T.progressIcon ? T.progressIcon(c.n, true) : icon(flake())}</span>`).join("")}</div>`
+            : wordMode
+              ? `<div class="word spell">${T.spell.split(" ").map((l, i) => `<span style="animation-delay:${0.2 + i * 0.12}s">${esc(l)}</span>`).join("")}</div>`
+              : `<div class="word">${T.finalWord.split("").map((l, i) => `<span style="animation-delay:${0.2 + i * 0.1}s">${esc(l)}</span>`).join("")}</div>`}
           <p class="say">${esc(f.body)}</p>
           <button class="gift" id="gift" aria-label="${esc(T.finale.tapGift)}">
-            <svg viewBox="0 0 120 110" aria-hidden="true"><g class="box"><rect x="18" y="46" width="84" height="60" rx="4" fill="${P.red}"/><rect x="54" y="46" width="12" height="60" fill="${P.mustard}"/></g>
+            ${T.giftSvg ? T.giftSvg() : `<svg viewBox="0 0 120 110" aria-hidden="true"><g class="box"><rect x="18" y="46" width="84" height="60" rx="4" fill="${P.red}"/><rect x="54" y="46" width="12" height="60" fill="${P.mustard}"/></g>
               <g class="lid"><rect x="12" y="34" width="96" height="16" rx="3" fill="${P.red}"/><rect x="54" y="34" width="12" height="16" fill="${P.mustard}"/>
-              <path d="M60 34 C44 10 24 16 30 28 C33 34 48 34 60 34Z M60 34 C76 10 96 16 90 28 C87 34 72 34 60 34Z" fill="${P.mustard}"/></g></svg>
+              <path d="M60 34 C44 10 24 16 30 28 C33 34 48 34 60 34Z M60 34 C76 10 96 16 90 28 C87 34 72 34 60 34Z" fill="${P.mustard}"/></g></svg>`}
             <span>${esc(T.finale.tapGift)}</span>
           </button>
           <div class="reveal" id="reveal" hidden><p class="kicker">${esc(T.finale.earned)}</p><p class="prize">${esc(prize)}</p></div>
@@ -505,7 +527,7 @@
         const g = el.querySelector("#gift"); if (g.classList.contains("open")) return;
         g.classList.add("open"); play("correct"); fx.burst();
         setTimeout(() => { el.querySelector("#reveal").hidden = false; g.querySelector("span").textContent = ""; }, 450);
-        say([{ key: "earned", text: T.finale.earned + " " + prize + "!" }]);
+        say([{ key: "earned", text: T.finale.earnedSay || T.finale.earned + " " + prize + "!" }]);
       };
       el.querySelector("[data-close]").onclick = () => { fx.stop(); stopSpeaking(); el.remove(); };
       fx.burst();
@@ -514,6 +536,7 @@
 
     // Night-time celebration: glowing tree, twinkling lights, lit-up houses, presents.
     function celebrationScene() {
+      if (T.celebrationScene) return T.celebrationScene(M);
       const W = 420, H = 380, rnd = M.rand(17), warm = Object.assign({}, P, { window: P.mustard });
       let s = `<rect width="${W}" height="${H}" fill="${P.navy}"/>`;
       for (let i = 0; i < 70; i++) s += `<circle class="tw" style="animation-delay:${(rnd() * 2).toFixed(2)}s" cx="${(rnd() * W).toFixed(0)}" cy="${(rnd() * H * 0.6).toFixed(0)}" r="${(0.8 + rnd() * 1.6).toFixed(1)}" fill="${P.cream}"/>`;
@@ -547,7 +570,7 @@
       fit(); addEventListener("resize", fit);
       const W = () => cv.clientWidth, H = () => cv.clientHeight;
       const snow = () => ({ k: "s", x: Math.random() * W(), y: -10 - Math.random() * H(), r: 1.2 + Math.random() * 2.8, vy: 0.6 + Math.random() * 1.2, w: Math.random() * 6, rot: Math.random() * 6, star: Math.random() < 0.35 });
-      for (let i = 0; i < 110; i++) { const p = snow(); p.y = Math.random() * H(); parts.push(p); }
+      for (let i = 0; i < (leaves ? 40 : 110); i++) { const p = snow(); p.y = Math.random() * H(); parts.push(p); }
       const conf = [P.red, P.mustard, P.mint, P.pink, P.cream];
       const burst = () => { if (still) return; for (let i = 0; i < 140; i++) parts.push({ k: "c", x: W() / 2, y: H() * 0.32, vx: (Math.random() - 0.5) * 9, vy: -3 - Math.random() * 7, r: 3 + Math.random() * 4, a: Math.random() * 6, va: (Math.random() - 0.5) * 0.3, c: conf[i % conf.length], life: 220 }); };
       (function loop() {
@@ -558,7 +581,8 @@
             p.y += still ? 0 : p.vy; p.w += 0.02; p.x += Math.sin(p.w) * 0.4; p.rot += 0.01;
             if (p.y > H() + 5) Object.assign(p, snow(), { y: -5 });
             g.globalAlpha = 0.9;
-            if (p.star) drawFlake(g, p.x, p.y, p.r * 2.2, p.rot, "#fff"); else { g.fillStyle = "#fff"; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.28); g.fill(); }
+            if (leaves) drawLeaf(g, p.x, p.y, p.r * 2.4, p.rot, leafCols[Math.floor(p.w * 10) % leafCols.length]);
+            else if (p.star) drawFlake(g, p.x, p.y, p.r * 2.2, p.rot, "#fff"); else { g.fillStyle = "#fff"; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.28); g.fill(); }
             return true;
           }
           p.vy += 0.16; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.a += p.va; p.life--;
@@ -595,7 +619,7 @@
     function modeButtons(current) {
       return `<div class="modes">${Object.entries(T.modes).map(([k, m]) => `
         <button class="mode ${current === k ? "on" : ""}" data-mode="${k}">
-          <span class="mode-ic">${icon(k === "little" ? sym("star").svg() : sym("house").svg())}</span>
+          <span class="mode-ic">${icon((k === "little" ? sym("star") || T.symbols[0] : sym("house") || T.symbols[1]).svg())}</span>
           <span><b>${esc(m.label)}</b><small>${esc(m.ages)}</small><em>${esc(m.blurb)}</em></span>
         </button>`).join("")}</div>`;
     }
@@ -625,13 +649,13 @@
           "Voice: " + (v ? v.name : "default") + ". For a nicer voice on iPhone/iPad: Settings → Accessibility → Spoken Content → Voices → English → English (UK) → Serena (Premium). On Android: Settings → Text-to-speech → Google, English (UK).";
       };
       set(); setTimeout(set, 800);
-      const tv = el.querySelector("#testVoice"); if (tv) tv.onclick = () => { play("correct"); setTimeout(() => say([{ key: "test", text: "Ho ho ho! Merry Christmas. The magic is ready." }]), 600); };
+      const tv = el.querySelector("#testVoice"); if (tv) tv.onclick = () => { play("correct"); setTimeout(() => say([{ key: "test", text: U.testLine }]), 600); };
     }
 
     function openParent() {
       const rows = T.clues.map((c) => `<li>
           <span class="num">${c.n}</span>
-          <span class="where">${esc(c.hideAt)}<small>${isSolved(c.n) ? "Found · letter " + esc(c.letter) : "Not found yet"}</small></span>
+          <span class="where">${esc(c.hideAt)}<small>${isSolved(c.n) ? "Found · " + U.secretLabel + " " + esc(c.letter) : "Not found yet"}</small></span>
           <span class="mini-code">${c.code.map((s) => icon(sym(s).svg())).join("")}</span>
           ${isSolved(c.n) || !state.namesDone ? "" : `<button class="ghost" data-skip="${c.n}">Skip</button>`}
         </li>`).join("");
@@ -642,12 +666,12 @@
           ${!state.unlocked && state.setupDone ? `<div class="row"><button class="btn green" id="forceUnlock">Unlock without the password</button></div>` : ""}
           <h3>Who's playing?</h3>
           ${modeButtons(state.mode)}
-          <h3>Santa's letter</h3>
+          <h3>${esc(U.letterName.charAt(0).toUpperCase() + U.letterName.slice(1))}</h3>
           <div class="seg"><button class="${state.paint ? "on" : ""}" data-paint="1">With painting</button><button class="${state.paint ? "" : "on"}" data-paint="0">No painting</button></div>
           <h3>Finders' names</h3>
           <input id="namesEdit" class="text-in" type="text" maxlength="80" placeholder="e.g. Isla, Hela" value="${esc(state.names.join(", "))}">
           <p class="note" style="margin:4px 0 0">Separate names with commas.</p>
-          <h3>The surprise under the tree</h3>
+          <h3>${esc(U.surpriseHeading)}</h3>
           ${surpriseField()}
           ${voiceBlock()}
           <h3>Clues &amp; codes</h3>
@@ -685,6 +709,13 @@
     // ---------- Background snowfall: little flakes and dots drifting over the page
     const cv = document.getElementById("snow"), g = cv.getContext("2d");
     let flakes = [];
+    const leaves = T.particles === "leaves", leafCols = [P.pumpkin || P.red, P.mustard, P.redDeep, P.tan, P.sage];
+    // An autumn leaf: pointed oval with a centre vein.
+    function drawLeaf(c, x, y, r, rot, color) {
+      c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = color;
+      c.beginPath(); c.moveTo(0, -r); c.quadraticCurveTo(r * 0.75, -r * 0.2, 0, r); c.quadraticCurveTo(-r * 0.75, -r * 0.2, 0, -r); c.fill();
+      c.strokeStyle = "rgba(0,0,0,.18)"; c.lineWidth = Math.max(0.6, r * 0.08); c.beginPath(); c.moveTo(0, -r * 0.8); c.lineTo(0, r * 1.25); c.stroke(); c.restore();
+    }
     function drawFlake(c, x, y, r, rot, color) {
       c.save(); c.translate(x, y); c.rotate(rot); c.strokeStyle = color; c.lineWidth = Math.max(1, r * 0.18); c.lineCap = "round";
       c.beginPath();
@@ -701,7 +732,7 @@
     const mk = (y) => {
       const star = Math.random() < 0.45;
       return { x: Math.random() * innerWidth, y: y != null ? y : Math.random() * innerHeight, r: star ? 4 + Math.random() * 4 : 1 + Math.random() * 2, star,
-        s: 0.25 + Math.random() * 0.5, w: Math.random() * 6.28, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.02 };
+        s: 0.25 + Math.random() * 0.5, w: Math.random() * 6.28, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.02, ci: Math.floor(Math.random() * 5) };
     };
     function snowBurst() { if (still) return; for (let i = 0; i < 34; i++) flakes.push(Object.assign(mk(-Math.random() * 240), { s: 2.4 + Math.random() * 2, burst: true, star: true, r: 5 + Math.random() * 4 })); }
     if (!still) {
@@ -713,7 +744,9 @@
           f.y += f.s; f.w += 0.02; f.x += Math.sin(f.w) * 0.3; f.rot += f.vr;
           if (f.y > innerHeight + 10) { if (f.burst) return false; Object.assign(f, mk(-10)); }
           const col = f.burst ? P.mustard : "rgba(140,152,190,.6)";
-          if (f.star) drawFlake(g, f.x, f.y, f.r, f.rot, col);
+          if (leaves && (f.star || f.burst)) { g.globalAlpha = f.burst ? 1 : 0.55; drawLeaf(g, f.x, f.y, f.r * 1.1, f.rot * 3, f.burst ? leafCols[f.ci % leafCols.length] : leafCols[f.ci % leafCols.length]); g.globalAlpha = 1; }
+          else if (leaves) { g.beginPath(); g.arc(f.x, f.y, f.r * 0.8, 0, 6.28); g.fillStyle = "rgba(181,154,102,.35)"; g.fill(); }
+          else if (f.star) drawFlake(g, f.x, f.y, f.r, f.rot, col);
           else { g.beginPath(); g.arc(f.x, f.y, f.r, 0, 6.28); g.fillStyle = col; g.fill(); }
           return true;
         });
@@ -724,6 +757,12 @@
     // ---------- The hidden mouse. Every so often he scampers along the bottom or peeks in from the side.
     // Tap him and he squeaks. Kids who keep looking spot him more.
     function mouseSvg(mini) {
+      if (critter.kind === "bat") return `<svg viewBox="0 0 70 44" aria-hidden="true" class="${mini ? "mini" : ""}">
+        <g class="legs wings"><path d="M35 22 C28 10 16 6 4 12 C10 14 12 18 12 22 C17 18 22 19 25 24 C28 21 32 21 35 24Z" fill="${P.navyDeep}"/>
+        <path d="M35 22 C42 10 54 6 66 12 C60 14 58 18 58 22 C53 18 48 19 45 24 C42 21 38 21 35 24Z" fill="${P.navyDeep}"/></g>
+        <ellipse cx="35" cy="24" rx="8" ry="9" fill="${P.navyDeep}"/><path d="M29 17 l1 -7 4 5Z M41 17 l-1 -7 -4 5Z" fill="${P.navyDeep}"/>
+        <circle cx="32" cy="22" r="2.2" fill="${P.mustard}"/><circle cx="38" cy="22" r="2.2" fill="${P.mustard}"/><path d="M33 28 l1 2 1 -2 1 2 1 -2" stroke="${P.cream}" stroke-width=".9" fill="none"/>
+      </svg>`;
       const body = "#a1958c", dark = "#6f655e";
       return `<svg viewBox="0 0 70 44" aria-hidden="true" class="${mini ? "mini" : ""}">
         <path class="tail" d="M12 30 C2 30 0 20 6 16 C9 14 10 18 7 20" fill="none" stroke="${P.tan}" stroke-width="2.6" stroke-linecap="round"/>
@@ -742,8 +781,9 @@
       // He lives in the scenery (the snowy hill at the top, the pine trees at the bottom), so he never covers buttons.
       const lane = document.createElement("div"); lane.className = "mouse-lane"; lane.hidden = true;
       const m = document.createElement("button");
-      m.className = "mouse"; m.type = "button"; m.setAttribute("aria-label", "A little mouse! Tap him.");
-      m.innerHTML = `<span class="body">${mouseSvg()}</span><span class="squeak">Squeak!</span>`;
+      m.className = "mouse"; m.type = "button"; m.setAttribute("aria-label", critter.label);
+      if (critter.kind === "bat") m.classList.add("bat");
+      m.innerHTML = `<span class="body">${mouseSvg()}</span><span class="squeak">${esc(critter.sound)}</span>`;
       lane.appendChild(m); document.body.appendChild(lane);
       let anim = null, busy = false, dir = 1, W = 0, peeking = false;
       const blocked = () => document.hidden || document.querySelector(".sheet, .finale");

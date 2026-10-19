@@ -227,3 +227,14 @@ button,.key,.lt{touch-action:manipulation}
 .seg{display:flex;gap:0;border:1.5px solid rgba(181,154,102,.7);border-radius:12px;overflow:hidden;background:#fff}
 .seg button{flex:1;appearance:none;border:0;background:none;padding:12px 8px;font:700 15px var(--font);color:var(--ink-soft);cursor:pointer}
 .seg button.on{background:var(--navy);color:var(--cream)}
+/* Word-based secrets (Halloween spell words) */
+.spell-strip{margin:2px var(--gutter) 6px;text-align:center;font:600 14px/1.5 var(--font);color:var(--ink-soft)}
+.spell-strip b{color:var(--red);font-weight:900}.spell-strip i{font-style:normal;letter-spacing:1px;opacity:.45}
+.secret.is-word{width:auto;min-width:120px;padding:0 22px;height:84px;font-size:clamp(34px,10vw,48px);border-radius:42px 42px 12px 12px}
+.word.spell{gap:6px;max-width:340px;margin-left:auto;margin-right:auto}
+.word.spell span{width:auto;height:34px;padding:0 10px;font-size:17px;border-radius:17px 17px 5px 5px}
+.spell-say{margin:2px 0 6px;font:800 17px/1.35 var(--font);color:var(--mustard)}
+/* The bat (Halloween's hidden critter): wings flap instead of legs scampering */
+.mouse.bat .wings{transform-origin:35px 22px;animation:flap .28s ease-in-out infinite}
+.mouse.bat.running .wings{animation-duration:.16s}
+@keyframes flap{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.45)}}
