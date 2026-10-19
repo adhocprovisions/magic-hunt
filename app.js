@@ -426,6 +426,8 @@
       const next = state.names.length > 1 && !last ? currentName() : "";
       const nextNote = next ? `<p class="note turn-next">Next turn: <b>${esc(next)}</b></p>` : "";
       const lit = little();
+      // Little Helpers: the last find goes straight to the celebration, which tells them to run to the tree.
+      if (last && lit) { setTimeout(showFinale, 500); return; }
       const el = sheet(lit
         ? `<div class="inner">
             <p class="kicker">Magic ${state.solved.length} of ${total} found!</p>
@@ -451,7 +453,7 @@
             <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read the riddle aloud</button>` : ""}
               <button class="btn" data-close>Off I go!</button></div>
           </div>`,
-        () => { stopSpeaking(); if (last && lit) setTimeout(showFinale, 150); });
+        stopSpeaking);
       const hintPart = { key: "hint-" + clue.next, text: spot.hint };
       const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([lit ? hintPart : { key: "riddle-" + clue.n, text: riddleText(clue.riddle) }]);
       if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock, optional: true }, hintPart]), 900);

@@ -174,12 +174,12 @@
       { n: 9, at: "bed", hideAt: "Under the blanket on a bed", next: "kitchen", code: ["star", "stocking", "house", "mitten"], letter: "E",
         unlock: "No napping yet! Only one more clue to go." },
       { n: 10, at: "kitchen", hideAt: "In the kitchen, by the cookies", next: "tree", code: ["gift", "holly", "tree", "bell"], letter: "S",
-        unlock: "That's all ten clues!! The magic is ready for you under the Christmas tree..." },
+        unlock: "That's all ten clues!! Solve one last riddle, and the magic is yours..." },
     ].map(function (c) { c.riddle = null; return c; }),
 
     finale: {
       big: { heading: "You found the magic, {names}!", headingNoName: "You found the magic!", body: "You cracked every code and spelled the magic word. Now tap the present to open your surprise!" },
-      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten magic snowflakes! Now run to the Christmas tree and tap the present to reveal your surprise!" },
+      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten magic snowflakes! Now run to the Christmas tree and tap the present in your game to reveal your surprise!" },
       earned: "You've earned",
       tapGift: "Tap the present to open it",
       defaultSurprise: "a Christmas surprise",
