@@ -276,16 +276,27 @@
         </section>`, { eyebrow: T.lock.unlocked, title: T.namesStep.heading, heroH: 120 });
       const listEl = document.getElementById("nameList");
       const read = () => [...listEl.querySelectorAll("input")].map((i) => i.value.trim().replace(/\s+/g, " ").slice(0, 20)).filter(Boolean);
-      document.getElementById("addName").onclick = (e) => {
-        const n = listEl.querySelectorAll("input").length; if (n >= 4) return;
-        listEl.insertAdjacentHTML("beforeend", nameRow("", n)); listEl.querySelectorAll("input")[n].focus();
-        if (n + 1 >= 4) e.currentTarget.hidden = true;
+      const addBtn = document.getElementById("addName");
+      const renumber = () => {
+        listEl.querySelectorAll(".name-row").forEach((row, i) => { row.querySelector("span").textContent = i + 1; row.querySelector("input").id = "name" + i; });
+        addBtn.hidden = listEl.querySelectorAll(".name-row").length >= 4;
       };
+      addBtn.onclick = () => {
+        const n = listEl.querySelectorAll("input").length; if (n >= 4) return;
+        listEl.insertAdjacentHTML("beforeend", nameRow("", n)); listEl.querySelectorAll("input")[n].focus(); renumber();
+      };
+      listEl.addEventListener("click", (e) => {
+        const x = e.target.closest(".name-x"); if (!x) return;
+        e.preventDefault();
+        const rows = listEl.querySelectorAll(".name-row");
+        if (rows.length === 1) rows[0].querySelector("input").value = ""; else x.closest(".name-row").remove();
+        renumber();
+      });
       const go = (names) => { state.names = names; state.namesDone = true; state.turn = 0; save(); play("tap"); render(); showFirstRiddle(); };
       document.getElementById("namesGo").onclick = () => go(read());
       document.getElementById("namesSkip").onclick = () => go([]);
     }
-    const nameRow = (v, i) => `<label class="name-row"><span>${i + 1}</span><input id="name${i}" type="text" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="${esc(T.namesStep.placeholder)}" value="${esc(v)}"></label>`;
+    const nameRow = (v, i) => `<div class="name-row"><span>${i + 1}</span><input id="name${i}" type="text" maxlength="20" autocomplete="off" autocapitalize="words" aria-label="Finder ${i + 1}" placeholder="${esc(T.namesStep.placeholder)}" value="${esc(v)}"><button type="button" class="name-x" aria-label="Remove this name">×</button></div>`;
 
     // ---------- 4. First riddle (leads to Clue 1)
     function showFirstRiddle() {
@@ -295,13 +306,13 @@
         <div class="inner">
           <p class="kicker">${esc(T.firstRiddle.kicker)}</p>
           <h2>${who ? "Ready, " + esc(who) + "?" : "Ready, Magic Finders?"}</h2>
-          <div class="riddle-box">${lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>
-          ${little() ? `<div class="next-spot"><p class="kicker">Look by</p><div class="spot-pic">${icon(spot.svg())}</div><p class="spot-name">${esc(spot.name)}</p></div>` : ""}
+          ${little() ? pictureClue(spot) : riddleBox(lines)}
           <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read it aloud</button>` : ""}
             <button class="btn" data-close>${esc(T.firstRiddle.go)}</button></div>
         </div>`, () => { stopSpeaking(); state.firstSeen = true; save(); });
-      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([{ key: "first-riddle", text: riddleText(lines) }]);
-      setTimeout(() => say([{ text: who ? "Ready, " + who + "?" : "" }, { key: "first-riddle", text: "Here's your first riddle. " + riddleText(lines) }]), 700);
+      const part = little() ? { key: "hint-" + T.firstSpot, text: spot.hint } : { key: "first-riddle", text: riddleText(lines) };
+      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([part]);
+      setTimeout(() => say([{ text: who ? "Ready, " + who + "?" : "" }, little() ? part : { key: "first-riddle", text: "Here's your first riddle. " + riddleText(lines) }]), 700);
     }
 
     // ---------- 5. The hunt
@@ -324,7 +335,7 @@
           ${complete
             ? `<p class="prompt">All ten found!</p><div class="row"><button class="btn" id="openFinale">Open the surprise</button></div>`
             : `${multi ? `<p class="turn-pill">${esc(fill(T.turn, { name: currentName() }))}</p>` : ""}
-               ${little() && done ? lookBy() : ""}
+               ${done ? (little() ? lookBy() : `<div class="row" style="margin:0 0 12px"><button class="ghost small" id="seeRiddle">See your last riddle</button></div>`) : ""}
                <p class="prompt">${esc(T.prompt[state.mode || "big"])}</p>
                <div class="slots" id="slots">${[0, 1, 2, 3].map(() => '<div class="slot"></div>').join("")}</div>
                <div class="keypad">${T.symbols.map((s) => `<button class="key" data-sym="${s.id}" aria-label="${esc(s.name)}"><span class="tile">${icon(s.svg())}</span><span class="nm">${esc(s.name)}</span></button>`).join("")}</div>
@@ -334,18 +345,29 @@
         eyebrow: T.eyebrow,
         sub: `<button class="mode-pill" id="modePill">${state.names.length ? esc(namesText()) + " · " : ""}${esc(m.label)}</button>`,
       });
-      const hr = document.getElementById("hearAgain"); if (hr) hr.onclick = () => { const c = T.clues.find((k) => k.n === state.solved[state.solved.length - 1]); say([{ key: "riddle-" + c.n, text: riddleText(c.riddle) }]); };
+      const lastClue = () => T.clues.find((k) => k.n === state.solved[state.solved.length - 1]);
+      const hr = document.getElementById("hearAgain"); if (hr) hr.onclick = () => { const sp = T.spots[lastClue().next]; say([{ key: "hint-" + lastClue().next, text: sp.hint }]); };
+      const sr = document.getElementById("seeRiddle"); if (sr) sr.onclick = () => {
+        const c = lastClue();
+        const el = sheet(`<div class="inner"><p class="kicker">The riddle from clue ${c.n}</p><h2>Where to next?</h2>${riddleBox(c.riddle)}
+          <div class="row">${canSpeak || T.voiceFiles ? `<button class="ghost" data-speak>Read it aloud</button>` : ""}<button class="btn" data-close>Got it!</button></div></div>`, stopSpeaking);
+        const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([{ key: "riddle-" + c.n, text: riddleText(c.riddle) }]);
+      };
       document.getElementById("modePill").onclick = () => setMsg("Grown-ups can change this: hold the Grown-ups button.");
       if (complete) { document.getElementById("openFinale").onclick = showFinale; return; }
       document.querySelectorAll(".key").forEach((k) => k.addEventListener("click", () => press(k.dataset.sym, k)));
       document.getElementById("undo").onclick = () => { entry.pop(); drawSlots(); };
       drawSlots();
     }
+    const riddleBox = (lines) => `<div class="riddle-box">${lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
+    // Little Helpers get a picture of the next place plus one simple sentence (no reading needed).
+    const pictureClue = (spot, kicker = "Where next?") => `<div class="next-spot"><p class="kicker">${esc(kicker)}</p>
+      <div class="spot-pic">${icon(spot.svg())}</div><p class="spot-hint">${esc(spot.hint)}</p></div>`;
     // Little Helpers: keep a picture of where to look next on the main screen, so they don't forget.
     function lookBy() {
       const c = T.clues.find((k) => k.n === state.solved[state.solved.length - 1]); if (!c) return "";
       const spot = T.spots[c.next];
-      return `<div class="look-by"><span class="lb-pic">${icon(spot.svg())}</span><span class="lb-txt"><small>Look by</small><b>${esc(spot.name)}</b></span>
+      return `<div class="look-by"><span class="lb-pic">${icon(spot.svg())}</span><span class="lb-txt"><small>Where next?</small><b>${esc(spot.hint)}</b></span>
         ${canSpeak || T.voiceFiles ? `<button class="ghost small" id="hearAgain" aria-label="Hear the riddle again">${iconSound()}</button>` : ""}</div>`;
     }
     function ornament(n, done) {
@@ -405,9 +427,8 @@
             <p class="kicker">Magic ${state.solved.length} of ${total} found!</p>
             <h2>${esc(cheer || "You found the magic!")}</h2>
             <p class="say">“${esc(clue.unlock)}”</p>
-            <div class="next-spot"><p class="kicker">${last ? "Now for the surprise" : "Next, look by"}</p>
-              <div class="spot-pic">${icon(spot.svg())}</div><p class="spot-name">${esc(spot.name)}</p></div>
-            <div class="row">${canSpeak ? `<button class="ghost" data-speak>Hear the riddle again</button>` : ""}
+            ${pictureClue(spot, last ? "Now for the surprise!" : "Where next?")}
+            <div class="row">${canSpeak || T.voiceFiles ? `<button class="ghost" data-speak>Hear it again</button>` : ""}
               <button class="btn" data-close>${last ? "See the surprise" : "Off I go!"}</button></div>
             ${nextNote}
             <p class="note">Colour in ornament ${clue.n} on your Magic Collector.</p>
@@ -419,14 +440,17 @@
             <div class="secret">${esc(clue.letter)}</div>
             <p class="say">“${esc(clue.unlock)}”</p>
             <p class="from">${esc(T.character.name)}</p>
-            <p class="note">Write <b>${esc(clue.letter)}</b> in ornament <b>${clue.n}</b> on your Magic Collector.${last ? "" : " Then solve the riddle on your clue to find the next one!"}</p>
+            <p class="note">Write <b>${esc(clue.letter)}</b> in ornament <b>${clue.n}</b> on your Magic Collector.</p>
+            <p class="kicker" style="margin-top:4px">${last ? "Your last riddle" : "Your next riddle"}</p>
+            ${riddleBox(clue.riddle)}
             ${nextNote}
             <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read the riddle aloud</button>` : ""}
               <button class="btn" data-close>${last ? "See the surprise" : "Off I go!"}</button></div>
           </div>`,
         () => { stopSpeaking(); if (last) setTimeout(showFinale, 150); });
-      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([{ key: "riddle-" + clue.n, text: riddleText(clue.riddle) }]);
-      if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock }, { key: "riddle-" + clue.n, text: (last ? "" : "Here's your riddle. ") + riddleText(clue.riddle) }]), 900);
+      const hintPart = { key: "hint-" + clue.next, text: spot.hint };
+      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([lit ? hintPart : { key: "riddle-" + clue.n, text: riddleText(clue.riddle) }]);
+      if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock }, hintPart]), 900);
       else setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock }]), 700);
     }
 

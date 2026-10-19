@@ -108,6 +108,9 @@ footer{margin-top:auto;padding:16px var(--gutter) 6px;display:flex;justify-conte
 .name-row input,.text-in,.surprise-field input{width:100%;font:500 17px var(--font);padding:11px 12px;border-radius:10px;border:1.5px solid rgba(181,154,102,.7);background:#fff;color:var(--ink);min-width:0}
 .name-row input:focus,.text-in:focus,.surprise-field input:focus{outline:2px solid var(--red);outline-offset:1px}
 .names-panel #addName{margin:10px auto 0;display:flex}
+.name-x{appearance:none;border:0;background:none;width:36px;height:36px;flex:none;border-radius:50%;font:600 24px/1 var(--font);color:var(--ink-soft);cursor:pointer}
+.name-x:active{background:rgba(44,43,54,.08)}
+.spot-hint{font-weight:800;font-size:19px;line-height:1.3;color:var(--navy-deep);margin:6px 0 0;text-wrap:balance}
 
 /* Surprise field */
 .surprise-field small{display:block;color:var(--ink-soft);font-size:13px;margin-top:6px}

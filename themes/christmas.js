@@ -62,30 +62,30 @@
     door: { name: "the front door", svg: () => `<rect x="24" y="8" width="52" height="88" rx="4" fill="${P.red}"/><rect x="30" y="16" width="40" height="30" rx="2" fill="${P.redDeep}" opacity=".5"/><rect x="30" y="54" width="40" height="34" rx="2" fill="${P.redDeep}" opacity=".5"/>
         <circle cx="50" cy="36" r="15" fill="none" stroke="${P.pine}" stroke-width="7"/><circle cx="42" cy="26" r="2.5" fill="${P.red}"/><circle cx="60" cy="32" r="2.5" fill="${P.red}"/><circle cx="46" cy="49" r="2.5" fill="${P.red}"/>
         <path d="M44 50 l6 -6 6 6" fill="${P.red}"/><circle cx="66" cy="62" r="3.5" fill="${P.mustard}"/>` },
-    tree: { name: "the Christmas tree", svg: treeSvg },
-    stockings: { name: "the stockings", svg: stockingSvg },
-    kitchen: { name: "the cookie jar in the kitchen", svg: () => `<rect x="22" y="30" width="56" height="62" rx="12" fill="${P.sky}"/><rect x="30" y="16" width="40" height="14" rx="4" fill="${P.tan}"/><circle cx="50" cy="13" r="6" fill="${P.tan}"/>
+    tree: { hint: "I'm sparkly and green, with a star on top!", name: "the Christmas tree", svg: treeSvg },
+    stockings: { hint: "We hang up high, and Santa fills us with treats!", name: "the stockings", svg: stockingSvg },
+    kitchen: { hint: "I'm full of cookies. Yum!", name: "the cookie jar in the kitchen", svg: () => `<rect x="22" y="30" width="56" height="62" rx="12" fill="${P.sky}"/><rect x="30" y="16" width="40" height="14" rx="4" fill="${P.tan}"/><circle cx="50" cy="13" r="6" fill="${P.tan}"/>
         <circle cx="50" cy="60" r="16" fill="${P.tan}"/><circle cx="44" cy="55" r="2.5" fill="${P.roofLine}"/><circle cx="55" cy="58" r="2.5" fill="${P.roofLine}"/><circle cx="48" cy="67" r="2.5" fill="${P.roofLine}"/>` },
-    fridge: { name: "the fridge door", svg: () => `<rect x="24" y="6" width="52" height="88" rx="7" fill="${P.sky}"/><path d="M24 36 H76" stroke="${P.navy}" stroke-width="2.5"/>
+    fridge: { hint: "I keep your food nice and cold.", name: "the fridge door", svg: () => `<rect x="24" y="6" width="52" height="88" rx="7" fill="${P.sky}"/><path d="M24 36 H76" stroke="${P.navy}" stroke-width="2.5"/>
         <rect x="66" y="14" width="4" height="14" rx="2" fill="${P.navy}"/><rect x="66" y="44" width="4" height="20" rx="2" fill="${P.navy}"/>
         <rect x="32" y="46" width="22" height="18" fill="${P.cream}" transform="rotate(-6 43 55)"/><circle cx="43" cy="44" r="3" fill="${P.red}"/>
         <path d="M36 60 l4 -6 4 4 5 -7" fill="none" stroke="${P.sage}" stroke-width="2"/><rect x="34" y="72" width="16" height="12" fill="${P.butter}" transform="rotate(5 42 78)"/><circle cx="42" cy="71" r="2.6" fill="${P.pine}"/>` },
-    table: { name: "the dinner table", svg: () => `<rect x="10" y="40" width="80" height="8" rx="2" fill="${P.roof}"/><rect x="16" y="48" width="6" height="40" fill="${P.roof}"/><rect x="78" y="48" width="6" height="40" fill="${P.roof}"/>
+    table: { hint: "This is where we eat our dinner.", name: "the dinner table", svg: () => `<rect x="10" y="40" width="80" height="8" rx="2" fill="${P.roof}"/><rect x="16" y="48" width="6" height="40" fill="${P.roof}"/><rect x="78" y="48" width="6" height="40" fill="${P.roof}"/>
         <path d="M14 40 H86 L82 54 H18Z" fill="${P.red}" opacity=".9"/><path d="M22 54 l4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6" fill="none" stroke="${P.red}" stroke-width="2"/>
         <ellipse cx="50" cy="36" rx="18" ry="5" fill="${P.cream}"/><path d="M38 34 C38 22 62 22 62 34Z" fill="${P.tan}"/><circle cx="50" cy="22" r="3" fill="${P.red}"/>
         <rect x="22" y="28" width="4" height="10" fill="${P.cream}"/><path d="M24 28 c-3 -4 0 -7 0 -9 c0 2 3 5 0 9Z" fill="${P.mustard}"/><rect x="74" y="28" width="4" height="10" fill="${P.cream}"/><path d="M76 28 c-3 -4 0 -7 0 -9 c0 2 3 5 0 9Z" fill="${P.mustard}"/>` },
-    couch: { name: "the couch cushions", svg: () => `<rect x="12" y="40" width="76" height="34" rx="10" fill="${P.sage}"/><rect x="20" y="28" width="60" height="26" rx="8" fill="${P.sage}"/>
+    couch: { hint: "Snuggle on me for movies and cuddles.", name: "the couch cushions", svg: () => `<rect x="12" y="40" width="76" height="34" rx="10" fill="${P.sage}"/><rect x="20" y="28" width="60" height="26" rx="8" fill="${P.sage}"/>
         <rect x="26" y="44" width="22" height="16" rx="5" fill="${P.pink}"/><rect x="52" y="44" width="22" height="16" rx="5" fill="${P.butter}"/><rect x="18" y="74" width="6" height="12" fill="${P.roof}"/><rect x="76" y="74" width="6" height="12" fill="${P.roof}"/>` },
-    books: { name: "the bookshelf", svg: () => `<rect x="14" y="86" width="72" height="6" fill="${P.roof}"/><rect x="18" y="30" width="14" height="56" fill="${P.red}"/><rect x="34" y="20" width="12" height="66" fill="${P.navy}"/>
+    books: { hint: "I'm full of stories to read at bedtime.", name: "the bookshelf", svg: () => `<rect x="14" y="86" width="72" height="6" fill="${P.roof}"/><rect x="18" y="30" width="14" height="56" fill="${P.red}"/><rect x="34" y="20" width="12" height="66" fill="${P.navy}"/>
         <rect x="48" y="36" width="16" height="50" fill="${P.pine}"/><rect x="66" y="26" width="12" height="60" transform="rotate(10 72 86)" fill="${P.mustard}"/><path d="M20 40 h10 M36 32 h8 M50 46 h12" stroke="${P.cream}" stroke-width="2"/>` },
-    window: { name: "the window", svg: () => `<rect x="18" y="12" width="64" height="76" rx="3" fill="${P.navy}"/><rect x="18" y="12" width="64" height="76" rx="3" fill="none" stroke="${P.cream}" stroke-width="5"/><path d="M50 12 V88 M18 50 H82" stroke="${P.cream}" stroke-width="4"/>
+    window: { hint: "Look through me to see outside.", name: "the window", svg: () => `<rect x="18" y="12" width="64" height="76" rx="3" fill="${P.navy}"/><rect x="18" y="12" width="64" height="76" rx="3" fill="none" stroke="${P.cream}" stroke-width="5"/><path d="M50 12 V88 M18 50 H82" stroke="${P.cream}" stroke-width="4"/>
         <circle cx="66" cy="28" r="7" fill="${P.cream}"/><circle cx="69" cy="26" r="6" fill="${P.navy}"/><circle cx="30" cy="26" r="1.6" fill="${P.cream}"/><circle cx="38" cy="38" r="1.2" fill="${P.cream}"/><circle cx="64" cy="66" r="1.5" fill="${P.cream}"/><rect x="12" y="86" width="76" height="8" fill="${P.tan}"/>` },
-    boots: { name: "the coats and boots", svg: () => `<path d="M16 30 H38 V72 H52 C58 72 60 88 54 88 H16Z" fill="${P.roof}"/><path d="M50 26 H72 V68 H86 C92 68 94 84 88 84 H50Z" fill="${P.red}"/>
+    boots: { hint: "Pull us on before you play in the snow.", name: "the coats and boots", svg: () => `<path d="M16 30 H38 V72 H52 C58 72 60 88 54 88 H16Z" fill="${P.roof}"/><path d="M50 26 H72 V68 H86 C92 68 94 84 88 84 H50Z" fill="${P.red}"/>
         <rect x="14" y="24" width="26" height="10" rx="3" fill="${P.cream}"/><rect x="48" y="20" width="26" height="10" rx="3" fill="${P.cream}"/>` },
-    bath: { name: "the bathtub", svg: () => `<path d="M10 48 H90 V58 C90 76 76 84 60 84 H40 C24 84 10 76 10 58Z" fill="${P.lilac}"/><rect x="6" y="44" width="88" height="8" rx="4" fill="${P.sky}"/>
+    bath: { hint: "Splish splash! I'm where you get clean.", name: "the bathtub", svg: () => `<path d="M10 48 H90 V58 C90 76 76 84 60 84 H40 C24 84 10 76 10 58Z" fill="${P.lilac}"/><rect x="6" y="44" width="88" height="8" rx="4" fill="${P.sky}"/>
         <path d="M20 84 l-4 10 M80 84 l4 10" stroke="${P.tan}" stroke-width="5" stroke-linecap="round"/><circle cx="34" cy="38" r="7" fill="${P.cream}"/><circle cx="46" cy="32" r="5" fill="${P.cream}"/>
         <circle cx="66" cy="34" r="9" fill="${P.mustard}"/><path d="M58 40 C58 50 80 50 80 40Z" fill="${P.mustard}"/><path d="M74 33 l7 2 -7 2Z" fill="${P.red}"/>` },
-    bed: { name: "your bed", svg: () => `<rect x="10" y="30" width="10" height="60" fill="${P.roof}"/><rect x="80" y="50" width="10" height="40" fill="${P.roof}"/><rect x="18" y="52" width="66" height="22" fill="${P.pink}"/>
+    bed: { hint: "You sleep in me every night.", name: "your bed", svg: () => `<rect x="10" y="30" width="10" height="60" fill="${P.roof}"/><rect x="80" y="50" width="10" height="40" fill="${P.roof}"/><rect x="18" y="52" width="66" height="22" fill="${P.pink}"/>
         <rect x="22" y="40" width="24" height="14" rx="6" fill="${P.cream}"/><path d="M40 52 H84 V74 H40Z" fill="${P.red}"/><path d="M48 52 V74 M60 52 V74 M72 52 V74" stroke="${P.cream}" stroke-width="2" stroke-dasharray="3 3"/>` },
     treasure: { name: "the treasure", svg: giftSvg },
   };
@@ -142,16 +142,16 @@
     finalSpot: "Under the Christmas tree",
     firstSpot: "stockings",
     riddles: {
-      stockings: ["We hang in a row and we each have a name.", "On Christmas we're full, but today we're the same.", "We're shaped like a sock, a giant one too.", "Reach right inside and you'll find your first clue!"],
-      books: ["I'm packed full of stories of reindeer and snow,", "of elves in their workshop and Santa's “Ho ho!”", "Search all of my shelves, look high and look low.", "Your next clue is waiting. Ready, set, go!"],
-      fridge: ["I hum all day and I'm chilly inside,", "where the milk and the cheese and the leftovers hide.", "Santa's milk will wait here on Christmas Eve night.", "Your clue's on my door, stuck on nice and tight!"],
-      table: ["On Christmas Day I hold the big feast,", "with crackers that bang (a dozen at least!).", "Pull up a chair where the family eats.", "Your next clue is hiding down under the seats!"],
-      couch: ["Snuggle with blankets and cushions galore", "for Christmas movies (and maybe a snore).", "I'm comfy and squishy, with seats for the crew.", "Dig under my cushions to find your next clue!"],
-      window: ["I'm made out of glass and I let in the light.", "On Christmas Eve, look out of me at night:", "you might spot a sleigh flying high in the sky!", "Your next clue is near me, so give it a try."],
-      boots: ["Boots, hats and mittens and coats hanging tall,", "we keep you all toasty when snowflakes fall.", "Before you go sledding, you pull us on tight.", "Look where we wait, hanging left or right!"],
-      bath: ["Splish, splash, splosh! I'm all bubbles and foam.", "Rubber ducks love me. I'm their favourite home.", "I'm empty right now, so come over and see:", "your next clue is waiting, quite dry, inside me!"],
-      bed: ["Close your eyes tight on Christmas Eve night", "so Santa can come while you're sleeping tight.", "Pillows and blankets, all cosy and deep.", "Your next clue is hiding where you go to sleep!"],
-      kitchen: ["Pots and pans clatter, the oven is hot.", "We bake Santa's cookies here (and eat quite a lot).", "Sprinkles and icing and gingerbread too.", "Check by the cookie jar for your last clue!"],
+      stockings: ["We hang in a row, and we each have a name.", "We're empty today, but we won't stay the same!", "We look like big socks, but you won't wear us, it's true.", "Reach right inside for your very first clue!"],
+      books: ["I'm packed full of stories, from short ones to long,", "with dragons and princesses, giggles and song.", "I stand very still with my shelves in a row.", "Your next clue is hiding where all the books go!"],
+      fridge: ["I hum all day long and I'm chilly inside,", "where the milk and the cheese and the leftovers hide.", "On Christmas Eve, Santa's milk waits in me.", "Your clue's on my door. Take a look and you'll see!"],
+      table: ["On Christmas Day I hold the big feast,", "with crackers that bang (a dozen at least!).", "Pull out the chairs where the family eats.", "Your next clue is hiding under the seats!"],
+      couch: ["I'm squishy and comfy with cushions galore,", "for Christmas films, cuddles (and maybe a snore).", "I've seats for the family, a blanket or two.", "Dig under my cushions to find your next clue!"],
+      window: ["I'm made out of glass and I let in the light.", "On Christmas Eve, peek through me late at night.", "You might spot a sleigh flying high in the sky!", "Your next clue is near me, so give it a try."],
+      boots: ["We're boots, hats and coats, and we wait by the door", "for snowball fights, sledging and snowmen galore.", "Before you go out, you pull us on tight.", "Search where we hang, to the left or the right!"],
+      bath: ["Splish, splash, splosh! I'm all bubbles and foam.", "The rubber ducks say I'm their favourite home.", "I'm empty right now, so come over and see:", "your next clue is waiting, quite dry, inside me!"],
+      bed: ["I'm cosy and soft, with a pillow or two.", "On Christmas Eve night, I'm where Santa finds you!", "Close your eyes tight and get plenty of sleep.", "Your next clue is tucked where your blankets are deep."],
+      kitchen: ["Pots and pans clatter, the oven gets hot.", "We bake Santa's cookies here (and eat quite a lot!).", "With sprinkles and icing and gingerbread too,", "check by the cookie jar for your last clue!"],
       tree: ["You've followed the magic all over the house!", "Now tiptoe along, as quiet as a mouse,", "to the one with the star and the twinkling light.", "Look under its branches: your surprise is in sight!"],
     },
     clues: [
