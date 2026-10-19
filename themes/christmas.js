@@ -66,6 +66,10 @@
     stockings: { name: "the stockings", svg: stockingSvg },
     kitchen: { name: "the cookie jar in the kitchen", svg: () => `<rect x="22" y="30" width="56" height="62" rx="12" fill="${P.sky}"/><rect x="30" y="16" width="40" height="14" rx="4" fill="${P.tan}"/><circle cx="50" cy="13" r="6" fill="${P.tan}"/>
         <circle cx="50" cy="60" r="16" fill="${P.tan}"/><circle cx="44" cy="55" r="2.5" fill="${P.roofLine}"/><circle cx="55" cy="58" r="2.5" fill="${P.roofLine}"/><circle cx="48" cy="67" r="2.5" fill="${P.roofLine}"/>` },
+    fridge: { name: "the fridge door", svg: () => `<rect x="24" y="6" width="52" height="88" rx="7" fill="${P.sky}"/><path d="M24 36 H76" stroke="${P.navy}" stroke-width="2.5"/>
+        <rect x="66" y="14" width="4" height="14" rx="2" fill="${P.navy}"/><rect x="66" y="44" width="4" height="20" rx="2" fill="${P.navy}"/>
+        <rect x="32" y="46" width="22" height="18" fill="${P.cream}" transform="rotate(-6 43 55)"/><circle cx="43" cy="44" r="3" fill="${P.red}"/>
+        <path d="M36 60 l4 -6 4 4 5 -7" fill="none" stroke="${P.sage}" stroke-width="2"/><rect x="34" y="72" width="16" height="12" fill="${P.butter}" transform="rotate(5 42 78)"/><circle cx="42" cy="71" r="2.6" fill="${P.pine}"/>` },
     table: { name: "the dinner table", svg: () => `<rect x="10" y="40" width="80" height="8" rx="2" fill="${P.roof}"/><rect x="16" y="48" width="6" height="40" fill="${P.roof}"/><rect x="78" y="48" width="6" height="40" fill="${P.roof}"/>
         <path d="M14 40 H86 L82 54 H18Z" fill="${P.red}" opacity=".9"/><path d="M22 54 l4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6 4 6 4 -6" fill="none" stroke="${P.red}" stroke-width="2"/>
         <ellipse cx="50" cy="36" rx="18" ry="5" fill="${P.cream}"/><path d="M38 34 C38 22 62 22 62 34Z" fill="${P.tan}"/><circle cx="50" cy="22" r="3" fill="${P.red}"/>
@@ -105,57 +109,75 @@
       big: { label: "Big Detectives", ages: "Ages 6–10", blurb: "Enter codes in order, solve the riddles yourself and collect the secret letters." },
     },
 
-    welcome: {
-      heading: "Christmas magic is hiding in your house!",
-      body: "Paint the back of Santa's letter to find out where the first clue is. Then come back and tap in its picture code.",
-      button: "Let's find the magic",
+    // ---- Start of the hunt: a grown-up knocks (or rings the bell) and leaves Santa's letter at the front door.
+    // The back of the letter hides the password in white crayon. It unlocks the app, which then gives the first riddle.
+    password: "MAGIC",
+    passwordDecoys: ["S", "N", "O"], // extra letter tiles on the lock screen, so it isn't too easy
+    lock: {
+      heading: "The Magic Finder is locked",
+      body: "Santa's letter has a secret password on the back. Paint it to make the letters appear, then tap them in here.",
+      wrong: "That's not the magic word. Paint a little more and look again!",
+      unlocked: "Unlocked! The magic is awake.",
     },
+    namesStep: {
+      heading: "Who are the Magic Finders?",
+      body: "Type each finder's name so Santa knows who to cheer for. (Grown-ups can help!)",
+      placeholder: "Name",
+      add: "Add another finder",
+      button: "Start the hunt",
+      skip: "Skip names",
+    },
+    firstRiddle: { kicker: "Your first riddle", go: "I know where to look!" },
     prompt: { little: "Tap the pictures on your clue", big: "Enter the code from your clue" },
+    turn: "{name}'s turn to tap",
     wrong: { little: ["Not quite! Look at your clue and try again.", "Almost! Check the pictures again."], big: ["The magic didn't sparkle. Check the order and try again.", "Not quite. Look closely at your clue and try again."] },
     already: "You already found that one!",
+    cheers: ["Brilliant, {name}!", "Well spotted, {name}!", "Super sleuthing, {name}!", "Ho ho ho, {name}!"],
 
-    // ---- The hunt. Card N is HIDDEN at hideAt. Its riddle leads to the next card (spot = next).
-    // Secret letters spell finalWord in order.
+    // ---- Riddles describe a PLACE. The first riddle (shown in the app after unlocking) leads to Clue 1;
+    // each clue's riddle leads to the next clue; Clue 10's riddle leads to the tree.
     finalWord: "SNOWFLAKES",
-    firstLocation: "FRONT DOOR",
     finalSpot: "Under the Christmas tree",
-    firstSpot: "door",
+    firstSpot: "stockings",
+    riddles: {
+      stockings: ["We hang in a row and we each have a name.", "On Christmas we're full, but today we're the same.", "We're shaped like a sock, a giant one too.", "Reach right inside and you'll find your first clue!"],
+      books: ["I'm packed full of stories of reindeer and snow,", "of elves in their workshop and Santa's “Ho ho!”", "Search all of my shelves, look high and look low.", "Your next clue is waiting. Ready, set, go!"],
+      fridge: ["I hum all day and I'm chilly inside,", "where the milk and the cheese and the leftovers hide.", "Santa's milk will wait here on Christmas Eve night.", "Your clue's on my door, stuck on nice and tight!"],
+      table: ["On Christmas Day I hold the big feast,", "with crackers that bang (a dozen at least!).", "Pull up a chair where the family eats.", "Your next clue is hiding down under the seats!"],
+      couch: ["Snuggle with blankets and cushions galore", "for Christmas movies (and maybe a snore).", "I'm comfy and squishy, with seats for the crew.", "Dig under my cushions to find your next clue!"],
+      window: ["I'm made out of glass and I let in the light.", "On Christmas Eve, look out of me at night:", "you might spot a sleigh flying high in the sky!", "Your next clue is near me, so give it a try."],
+      boots: ["Boots, hats and mittens and coats hanging tall,", "we keep you all toasty when snowflakes fall.", "Before you go sledding, you pull us on tight.", "Look where we wait, hanging left or right!"],
+      bath: ["Splish, splash, splosh! I'm all bubbles and foam.", "Rubber ducks love me. I'm their favourite home.", "I'm empty right now, so come over and see:", "your next clue is waiting, quite dry, inside me!"],
+      bed: ["Close your eyes tight on Christmas Eve night", "so Santa can come while you're sleeping tight.", "Pillows and blankets, all cosy and deep.", "Your next clue is hiding where you go to sleep!"],
+      kitchen: ["Pots and pans clatter, the oven is hot.", "We bake Santa's cookies here (and eat quite a lot).", "Sprinkles and icing and gingerbread too.", "Check by the cookie jar for your last clue!"],
+      tree: ["You've followed the magic all over the house!", "Now tiptoe along, as quiet as a mouse,", "to the one with the star and the twinkling light.", "Look under its branches: your surprise is in sight!"],
+    },
     clues: [
-      { n: 1, hideAt: "Front door", next: "stockings", code: ["star", "bell", "tree", "gift"], letter: "S",
-        riddle: ["We hang in a row and we each have a name.", "On Christmas we're full, but today we're the same.", "We're shaped like a sock, a giant one too.", "Reach right inside and you'll find your next clue!"],
-        unlock: "Ho ho ho! You found the first one. The magic is starting to sparkle." },
-      { n: 2, hideAt: "Stockings", next: "kitchen", code: ["mitten", "house", "holly", "star"], letter: "N",
-        riddle: ["Pots and pans clatter, the oven is hot.", "We bake Santa's cookies here (and eat quite a lot).", "Sprinkles and icing and gingerbread too.", "Check by the cookie jar for your next clue!"],
-        unlock: "Not filled yet... but they're full of magic now." },
-      { n: 3, hideAt: "Kitchen (cookie jar)", next: "table", code: ["gift", "stocking", "bell", "mitten"], letter: "O",
-        riddle: ["On Christmas Day I hold the big feast,", "with crackers that bang (a dozen at least!).", "Pull up a chair where the family eats.", "Your next clue is hiding down under the seats!"],
-        unlock: "Did you sneak a cookie? Your secret's safe with me." },
-      { n: 4, hideAt: "Dinner table", next: "couch", code: ["tree", "holly", "house", "stocking"], letter: "W",
-        riddle: ["Snuggle with blankets and cushions galore", "for Christmas movies (and maybe a snore).", "I'm comfy and squishy, with seats for the crew.", "Dig under my cushions to find your next clue!"],
-        unlock: "Save me a seat at Christmas dinner!" },
-      { n: 5, hideAt: "Couch", next: "books", code: ["bell", "mitten", "star", "holly"], letter: "F",
-        riddle: ["I'm packed full of stories of reindeer and snow,", "of elves in their workshop and Santa's “Ho ho!”", "Search all of my shelves, look high and look low.", "Your next clue is waiting. Ready, set, go!"],
-        unlock: "Cushion magic! You're getting very good at this." },
-      { n: 6, hideAt: "Bookshelf", next: "window", code: ["stocking", "tree", "gift", "house"], letter: "L",
-        riddle: ["I'm made out of glass and I let in the light.", "On Christmas Eve, look out of me at night:", "you might spot a sleigh flying high in the sky!", "Your next clue is near me, so give it a try."],
+      { n: 1, at: "stockings", hideAt: "Stockings", next: "books", code: ["star", "bell", "tree", "gift"], letter: "S",
+        unlock: "Ho ho ho! Not filled yet... but they're full of magic now." },
+      { n: 2, at: "books", hideAt: "Bookshelf", next: "fridge", code: ["mitten", "house", "holly", "star"], letter: "N",
         unlock: "Every good story needs a clever detective." },
-      { n: 7, hideAt: "Window", next: "boots", code: ["holly", "star", "stocking", "bell"], letter: "A",
-        riddle: ["Boots, hats and mittens and coats hanging tall,", "we keep you all toasty when snowflakes fall.", "Before you go sledding, you pull us on tight.", "Look where we wait, hanging left or right!"],
+      { n: 3, at: "fridge", hideAt: "Fridge door", next: "table", code: ["gift", "stocking", "bell", "mitten"], letter: "O",
+        unlock: "Brrr! That clue was chilly. Good thing you're quick." },
+      { n: 4, at: "table", hideAt: "Dinner table", next: "couch", code: ["tree", "holly", "house", "stocking"], letter: "W",
+        unlock: "Save me a seat at Christmas dinner!" },
+      { n: 5, at: "couch", hideAt: "Couch cushions", next: "window", code: ["bell", "mitten", "star", "holly"], letter: "F",
+        unlock: "Cushion magic! You're getting very good at this." },
+      { n: 6, at: "window", hideAt: "Window", next: "boots", code: ["stocking", "tree", "gift", "house"], letter: "L",
         unlock: "Was that a reindeer outside? Keep going!" },
-      { n: 8, hideAt: "Coats & boots", next: "bath", code: ["house", "gift", "mitten", "tree"], letter: "K",
-        riddle: ["Splish, splash, splosh! I'm all bubbles and foam.", "Rubber ducks love me. I'm their favourite home.", "I'm empty right now, so come over and see:", "your next clue is waiting, quite dry, inside me!"],
+      { n: 7, at: "boots", hideAt: "Coats & boots", next: "bath", code: ["holly", "star", "stocking", "bell"], letter: "A",
         unlock: "Wrap up warm. The magic is getting stronger." },
-      { n: 9, hideAt: "Bathtub", next: "bed", code: ["star", "stocking", "house", "mitten"], letter: "E",
-        riddle: ["Close your eyes tight on Christmas Eve night", "so Santa can come while you're sleeping tight.", "Pillows and blankets, all cosy and deep.", "Your next clue is hiding where you go to sleep!"],
-        unlock: "Splish splash! Only one more clue to go." },
-      { n: 10, hideAt: "Bedroom (bed)", next: "tree", code: ["gift", "holly", "tree", "bell"], letter: "S",
-        riddle: ["You've followed the magic all over the house!", "Now tiptoe along, as quiet as a mouse,", "to the one with the star and the twinkling light.", "Look under its branches: your surprise is in sight!"],
+      { n: 8, at: "bath", hideAt: "Bathtub", next: "bed", code: ["house", "gift", "mitten", "tree"], letter: "K",
+        unlock: "Splish splash! The magic loves a bubble bath." },
+      { n: 9, at: "bed", hideAt: "Bed", next: "kitchen", code: ["star", "stocking", "house", "mitten"], letter: "E",
+        unlock: "No napping yet! Only one more clue to go." },
+      { n: 10, at: "kitchen", hideAt: "Kitchen (cookie jar)", next: "tree", code: ["gift", "holly", "tree", "bell"], letter: "S",
         unlock: "That's all ten! The magic is gathering under the Christmas tree..." },
-    ],
+    ].map(function (c) { c.riddle = null; return c; }),
 
     finale: {
-      big: { heading: "You found the magic!", body: "You cracked every code and spelled the magic word. Now run to the Christmas tree!" },
-      little: { heading: "You found all the magic!", body: "Ten magic snowflakes! Now run to the Christmas tree!" },
+      big: { heading: "You found the magic, {names}!", headingNoName: "You found the magic!", body: "You cracked every code and spelled the magic word. Now run to the Christmas tree!" },
+      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten magic snowflakes! Now run to the Christmas tree!" },
       earned: "You've earned",
       tapGift: "Tap the present to open it",
       defaultSurprise: "a Christmas surprise",
@@ -172,8 +194,8 @@
       greeting: "Dear Magic Finder,",
       paragraphs: [
         "Every Christmas, a little magic sparkles off my sleigh as I fly over the rooftops. This year, some of it landed in YOUR house! It's hiding in ten secret places, and I need a clever helper to find it all.",
-        "Every clue has a picture code. Tap it into the Magic Finder on your grown-up's phone and the magic will sparkle. Collect all ten pieces and the magic will lead you to a surprise under the Christmas tree.",
-        "Where should you start? Turn this letter over and paint the back. The first hiding place will appear, just like frost on a window.",
+        "First, you'll need the Magic Finder on your grown-up's phone. It's locked, and only a secret password will open it. Turn this letter over, dip your brush in paint and paint the back. The password will appear, just like frost on a window.",
+        "Once it's open, the Magic Finder will give you your first riddle. Every clue you find has a picture code. Tap it in and the magic will sparkle. Find all ten and the magic will lead you to a surprise.",
         "Good luck. The reindeer and I are cheering for you!",
       ],
       signoff: "With love and a twinkle,",
@@ -184,13 +206,13 @@
       instructions: "Each time you find the magic, colour in that ornament. Big Detectives: write your secret letter inside it too.",
       wordLabel: "The magic word is",
       treasureLabel: "My surprise was",
-      nameLabel: "Official Magic Finder",
+      nameLabel: "Official Magic Finder(s)",
     },
     treasureSign: { heading: "You found the magic!", body: "Merry Christmas" }, // put this under the tree with the surprise
 
     guide: {
       levelUp: [
-        ["Magic trail", "Sprinkle a little biodegradable glitter or paper snowflakes leading from the letter to the front door."],
+        ["Make the knock count", "Knock loudly or ring the bell, then hide! Leave the letter on the doormat with a jingle bell or a sprinkle of paper snowflakes."],
         ["Candy-cane rewards", "Tuck a candy cane beside each clue as a tiny prize for every find."],
         ["Lights-out hunt", "Play after dark with a torch on Christmas Eve. Fairy lights near each hiding spot add extra glow."],
         ["Cocoa finale", "Make the surprise a hot-cocoa station under the tree: mugs, marshmallows and a note from Santa."],
@@ -206,4 +228,6 @@
       ],
     },
   };
+  const T = window.HUNT_THEMES.christmas;
+  T.clues.forEach((c) => (c.riddle = T.riddles[c.next]));
 })();
