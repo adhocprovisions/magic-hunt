@@ -41,7 +41,7 @@
 
     // ---------- Saved progress (per theme). Storage can be unavailable (private mode): the game still works.
     const KEY = "hunt:" + T.id + ":v3";
-    let state = { mode: null, surprise: "", setupDone: false, unlocked: false, namesDone: false, firstSeen: false,
+    let state = { mode: null, paint: true, surprise: "", setupDone: false, unlocked: false, namesDone: false, firstSeen: false,
       names: [], turn: 0, solved: [], muted: false, mice: 0 };
     try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch (e) {}
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
@@ -202,9 +202,11 @@
           ${modeButtons(state.mode)}
           <h3><span class="n">2</span>What surprise have they earned?</h3>
           ${surpriseField()}
-          <h3><span class="n">3</span>Before you lock it</h3>
+          <h3><span class="n">3</span>Which letter did you print?</h3>
+          <div class="seg" id="paintSeg"><button class="${state.paint ? "on" : ""}" data-paint="1">With painting</button><button class="${state.paint ? "" : "on"}" data-paint="0">No painting</button></div>
+          <h3><span class="n">4</span>Before you lock it</h3>
           <ol class="checklist">
-            <li>Write <b>${esc(T.password)}</b> in big letters on the back of Santa's letter with a white crayon. Press hard.</li>
+            <li id="pwStep">${pwStep()}</li>
             <li>Hide the ${total} clue cards. Each card says where it goes.</li>
             <li>Put the surprise under the Christmas tree.</li>
           </ol>
@@ -218,9 +220,19 @@
         document.getElementById("lockIt").disabled = false;
       }));
       bindSurprise($app); bindVoice($app);
+      document.querySelectorAll("[data-paint]").forEach((b) => (b.onclick = () => {
+        state.paint = b.dataset.paint === "1"; save();
+        document.querySelectorAll("[data-paint]").forEach((x) => x.classList.toggle("on", x === b));
+        document.getElementById("pwStep").innerHTML = pwStep();
+      }));
       document.getElementById("lockIt").onclick = () => { state.setupDone = true; save(); play("tap"); render(); };
     }
 
+    const pwStep = () => state.paint
+      ? `Write <b>${esc(T.password)}</b> in big letters on the back of Santa's letter with a white crayon. Press hard.`
+      : `Print Santa's letter double-sided. The password is already printed on the back.`;
+    const lockBody = () => (state.paint ? T.lock.body : T.lock.bodyNoPaint);
+    const lockWrong = () => (state.paint ? T.lock.wrong : T.lock.wrongNoPaint);
     // ---------- 2. Lock screen: the password from the back of Santa's letter
     let pw = [];
     function renderLock() {
@@ -229,7 +241,7 @@
       frame(`
         <section class="panel lock-panel">
           <div class="padlock" id="padlock">${padlockSvg()}</div>
-          <p class="say">${esc(T.lock.body)}</p>
+          <p class="say">${esc(lockBody())}</p>
           ${canSpeak ? `<button class="ghost small" id="hearLock">${iconSound()} Hear the message</button>` : ""}
           <div class="pw-slots" id="pwSlots">${T.password.split("").map(() => '<div class="pw-slot"></div>').join("")}</div>
           <div class="letters">${order.map((l) => `<button class="lt" data-l="${l}">${l}</button>`).join("")}</div>
@@ -241,7 +253,7 @@
         document.querySelectorAll(".pw-slot").forEach((el, i) => { el.textContent = pw[i] || ""; el.classList.toggle("filled", !!pw[i]); });
         document.getElementById("pwUndo").disabled = !pw.length;
       };
-      const h = document.getElementById("hearLock"); if (h) h.onclick = () => say([{ key: "lock", text: T.lock.heading + ". " + T.lock.body }]);
+      const h = document.getElementById("hearLock"); if (h) h.onclick = () => say([{ key: state.paint ? "lock" : "lock-nopaint", text: T.lock.heading + ". " + lockBody() }]);
       document.getElementById("pwUndo").onclick = () => { pw.pop(); draw(); };
       document.querySelectorAll(".lt").forEach((b) => (b.onclick = () => {
         if (pw.length >= T.password.length) return;
@@ -255,7 +267,7 @@
       if (pw.join("") === T.password) return doUnlock();
       play("wrong");
       const s = document.getElementById("pwSlots"); s.classList.remove("shake"); void s.offsetWidth; s.classList.add("shake");
-      setMsg(T.lock.wrong); say([{ key: "lock-wrong", text: T.lock.wrong }]);
+      setMsg(lockWrong()); say([{ key: state.paint ? "lock-wrong" : "lock-wrong-nopaint", text: lockWrong() }]);
       setTimeout(() => { pw = []; document.querySelectorAll(".pw-slot").forEach((el) => { el.textContent = ""; el.classList.remove("filled"); }); document.getElementById("pwUndo").disabled = true; }, 700);
     }
     function doUnlock() {
@@ -630,6 +642,8 @@
           ${!state.unlocked && state.setupDone ? `<div class="row"><button class="btn green" id="forceUnlock">Unlock without the password</button></div>` : ""}
           <h3>Who's playing?</h3>
           ${modeButtons(state.mode)}
+          <h3>Santa's letter</h3>
+          <div class="seg"><button class="${state.paint ? "on" : ""}" data-paint="1">With painting</button><button class="${state.paint ? "" : "on"}" data-paint="0">No painting</button></div>
           <h3>Finders' names</h3>
           <input id="namesEdit" class="text-in" type="text" maxlength="80" placeholder="e.g. Isla, Hela" value="${esc(state.names.join(", "))}">
           <p class="note" style="margin:4px 0 0">Separate names with commas.</p>
@@ -648,6 +662,10 @@
       el.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => {
         state.mode = b.dataset.mode; save();
         el.querySelectorAll("[data-mode]").forEach((x) => x.classList.toggle("on", x === b));
+      }));
+      el.querySelectorAll("[data-paint]").forEach((b) => (b.onclick = () => {
+        state.paint = b.dataset.paint === "1"; save();
+        el.querySelectorAll("[data-paint]").forEach((x) => x.classList.toggle("on", x === b));
       }));
       el.querySelector("#namesEdit").addEventListener("input", (e) => {
         state.names = e.target.value.split(",").map((s) => s.trim().slice(0, 20)).filter(Boolean).slice(0, 4); save();

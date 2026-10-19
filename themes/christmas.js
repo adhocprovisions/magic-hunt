@@ -120,6 +120,8 @@
       heading: "The Magic Finder is locked",
       body: "Santa's letter has a secret password on the back. Paint it to make the letters appear, then tap them in here.",
       wrong: "That's not the magic word. Paint a little more and look again!",
+      bodyNoPaint: "Santa's letter has a secret password on the back. Turn it over, then tap the letters in here.",
+      wrongNoPaint: "That's not the magic word. Check the back of the letter and try again!",
       unlocked: "Unlocked! The magic is awake.",
     },
     namesStep: {
@@ -201,6 +203,13 @@
         "Once it's open, the Magic Finder will give you your first riddle. Every clue you find has a picture code. Tap it in and the magic will sparkle. Find all ten and the magic will lead you to a surprise.",
         "Good luck. The reindeer and I are cheering for you!",
       ],
+      // No-painting version: same letter, password printed on the back.
+      paragraphsNoPaint: [
+        "Every Christmas, a little magic sparkles off my sleigh as I fly over the rooftops. This year, some of it landed in YOUR house! It's hiding in ten secret places, and I need a clever helper to find it all.",
+        "First, you'll need the Magic Finder on your grown-up's phone. It's locked, and only a secret password will open it. Turn this letter over to find the password, then tap it in.",
+        "Once it's open, the Magic Finder will give you your first riddle. Every clue you find has a picture code. Tap it in and the magic will sparkle. Find all ten and the magic will lead you to a surprise.",
+        "Good luck. The reindeer and I are cheering for you!",
+      ],
       signoff: "With love and a twinkle,",
       postscript: "P.S. Stuck? Grown-ups know a little bit of magic too.",
     },
@@ -215,7 +224,6 @@
 
     guide: {
       levelUp: [
-        ["Make the knock count", "Knock loudly or ring the bell, then hide! Leave the letter on the doormat with a jingle bell or a sprinkle of paper snowflakes."],
         ["Candy-cane rewards", "Tuck a candy cane beside each clue as a tiny prize for every find."],
         ["Lights-out hunt", "Play after dark with a torch on Christmas Eve. Fairy lights near each hiding spot add extra glow."],
         ["Cocoa finale", "Make the surprise a hot-cocoa station under the tree: mugs, marshmallows and a note from Santa."],
