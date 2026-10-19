@@ -95,6 +95,17 @@
       sleighbells: (t) => { for (let i = 0; i < 16; i++) { const tt = t + i * 0.055 + Math.random() * 0.02; noise(tt, 0.05, 6500 + Math.random() * 2500, 0.6); tone(2400 + Math.random() * 1600, tt, 0.12, "sine", 0.04); } bell(1046, t + 0.05, 0.16); bell(1568, t + 0.25, 0.14); },
       thud: (t) => { tone(220, t, 0.22, "triangle", 0.22); tone(165, t + 0.16, 0.32, "triangle", 0.22); },
       carillon: (t) => { [1046, 1318, 1568, 2093, 1568, 2093].forEach((f, i) => bell(f, t + i * 0.16, 0.17)); PRESETS.sleighbells(t + 1); },
+      // A cat's meow: a buzzy tone that rises then falls, through a sweeping filter (sounds like "mee-ow").
+      meow: (t) => {
+        const c = audio(); if (!c) return;
+        const o = c.createOscillator(), o2 = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+        o.type = "sawtooth"; o2.type = "triangle"; f.type = "bandpass"; f.Q.value = 4;
+        [[o, 1], [o2, 2.01]].forEach(([os, m]) => { os.frequency.setValueAtTime(520 * m, t); os.frequency.linearRampToValueAtTime(820 * m, t + 0.18); os.frequency.linearRampToValueAtTime(760 * m, t + 0.32); os.frequency.exponentialRampToValueAtTime(430 * m, t + 0.62); });
+        f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(2400, t + 0.2); f.frequency.exponentialRampToValueAtTime(700, t + 0.62);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.32, t + 0.05); g.gain.setValueAtTime(0.3, t + 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.66);
+        const g2 = c.createGain(); g2.gain.value = 0.35; o2.connect(g2).connect(f);
+        o.connect(f).connect(g).connect(c.destination); o.start(t); o2.start(t); o.stop(t + 0.7); o2.stop(t + 0.7);
+      },
       squeak: (t) => { tone(2300, t, 0.09, "sine", 0.16, 3700); tone(2500, t + 0.13, 0.12, "sine", 0.15, 3900); tone(3100, t + 0.13, 0.08, "triangle", 0.04); },
       unlock: (t) => { tone(600, t, 0.08, "square", 0.06); tone(900, t + 0.09, 0.1, "square", 0.06); PRESETS.carillon(t + 0.2); },
       // Spooky set (Halloween): minor-key chimes, a ghostly "whoo" glide and a creaky door.
@@ -526,7 +537,7 @@
       el.querySelector("#gift").onclick = () => {
         const g = el.querySelector("#gift"); if (g.classList.contains("open")) return;
         g.classList.add("open"); play("correct"); fx.burst();
-        setTimeout(() => { el.querySelector("#reveal").hidden = false; g.querySelector("span").textContent = ""; }, 450);
+        setTimeout(() => { const rv = el.querySelector("#reveal"); rv.hidden = false; g.querySelector("span").textContent = ""; try { rv.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" }); } catch (e) {} }, 450);
         say([{ key: "earned", text: T.finale.earnedSay || T.finale.earned + " " + prize + "!" }]);
       };
       el.querySelector("[data-close]").onclick = () => { fx.stop(); stopSpeaking(); el.remove(); };
@@ -757,6 +768,16 @@
     // ---------- The hidden mouse. Every so often he scampers along the bottom or peeks in from the side.
     // Tap him and he squeaks. Kids who keep looking spot him more.
     function mouseSvg(mini) {
+      if (critter.kind === "cat") return `<svg viewBox="0 0 70 44" aria-hidden="true" class="${mini ? "mini" : ""}">
+        <path class="tail" d="M12 26 C4 24 2 14 6 6 C8 3 11 5 9 8 C7 13 8 18 12 20" fill="none" stroke="${P.ink}" stroke-width="3.6" stroke-linecap="round"/>
+        <g class="legs"><rect x="16" y="32" width="4" height="10" rx="2" fill="${P.ink}"/><rect x="24" y="32" width="4" height="10" rx="2" fill="${P.ink}"/><rect x="38" y="32" width="4" height="10" rx="2" fill="${P.ink}"/><rect x="46" y="32" width="4" height="10" rx="2" fill="${P.ink}"/></g>
+        <ellipse cx="31" cy="27" rx="20" ry="9.5" fill="${P.ink}"/>
+        <circle cx="54" cy="19" r="9" fill="${P.ink}"/><path d="M47 13 L48 3 L54 10Z M56 10 L62 3 L62 14Z" fill="${P.ink}"/>
+        <ellipse cx="51.5" cy="18" rx="2.2" ry="1.7" fill="${P.mustard}"/><ellipse cx="58" cy="18" rx="2.2" ry="1.7" fill="${P.mustard}"/>
+        <circle cx="51.8" cy="18" r=".8" fill="${P.ink}"/><circle cx="58.3" cy="18" r=".8" fill="${P.ink}"/>
+        <path d="M60 22 L69 20 M60 23.5 L69 25" stroke="${P.tan}" stroke-width=".7" stroke-linecap="round"/>
+        <path d="M23 21 Q31 25 39 21" stroke="${P.red}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      </svg>`;
       if (critter.kind === "bat") return `<svg viewBox="0 0 70 44" aria-hidden="true" class="${mini ? "mini" : ""}">
         <g class="legs wings"><path d="M35 22 C28 10 16 6 4 12 C10 14 12 18 12 22 C17 18 22 19 25 24 C28 21 32 21 35 24Z" fill="${P.navyDeep}"/>
         <path d="M35 22 C42 10 54 6 66 12 C60 14 58 18 58 22 C53 18 48 19 45 24 C42 21 38 21 35 24Z" fill="${P.navyDeep}"/></g>
@@ -833,7 +854,7 @@
       }
       m.addEventListener("click", () => {
         if (!busy || m.classList.contains("caught")) return;
-        play("squeak"); if (navigator.vibrate) navigator.vibrate(20);
+        play(critter.preset || "squeak"); if (navigator.vibrate) navigator.vibrate(20);
         m.classList.add("caught");
         state.mice = (state.mice || 0) + 1; save();
         const mc = document.getElementById("miceCount"); if (mc) { mc.hidden = false; mc.querySelector("span").textContent = state.mice; }

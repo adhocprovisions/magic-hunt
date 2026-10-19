@@ -15,7 +15,8 @@ a{display:inline-block;background:#d9532f;color:#f6f0e4;font-weight:800;text-dec
 /* QR codes on the printed guides point here, so playlists can be changed any time without reprinting.
    Add one line per theme. */
 var PLAYLISTS = {
-  christmas: "https://open.spotify.com/playlist/3dw9hw3VKvr7ARef9mNAOj"
+  christmas: "https://open.spotify.com/playlist/3dw9hw3VKvr7ARef9mNAOj",
+  halloween: "https://open.spotify.com/search/kids%20halloween%20spooky" // placeholder until the Halloween playlist link is added
 };
 var t = (new URLSearchParams(location.search).get("theme") || "christmas").toLowerCase();
 var url = PLAYLISTS[t] || PLAYLISTS.christmas;

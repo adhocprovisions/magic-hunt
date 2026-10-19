@@ -86,7 +86,7 @@
     id: "halloween",
     title: "Halloween Magic Hunt",
     eyebrow: "A spooky hunt in ten clues",
-    character: { name: "Hazel", title: "Hollowmoor" },
+    character: { name: "Hazel the Witch", title: "Hollowmoor" },
     machineName: "the Spell Finder",
     palette: P,
     symbols,
@@ -96,7 +96,7 @@
     audioVersion: 1,
     sounds: { tap: "plink", correct: "spooky", wrong: "thud", finale: "spookyFinale", unlock: "spookyUnlock", critter: "squeak" },
     particles: "leaves", // falling autumn leaves instead of snow
-    critter: { kind: "bat", label: "A little bat! Tap him.", sound: "Squeak!" },
+    critter: { kind: "cat", label: "A little black cat! Tap her.", sound: "Meow!", preset: "meow" },
 
     // Words for things the engine says
     ui: {
@@ -130,9 +130,9 @@
       unlocked: "Unlocked! The spell book is awake.",
     },
     namesStep: {
-      heading: "Who are the curse breakers?",
+      heading: "Who's helping Hazel?",
       body: "Type each name so the spell knows who to cheer for. (Grown-ups can help!)",
-      placeholder: "Name", add: "Add another curse breaker", button: "Start the hunt", skip: "Skip names",
+      placeholder: "Name", add: "Add another helper", button: "Start the hunt", skip: "Skip names",
     },
     firstRiddle: { kicker: "Your first riddle", go: "I know where to look!" },
     prompt: { little: "Tap the pictures on your clue", big: "Enter the code from your clue" },
@@ -184,7 +184,7 @@
 
     finale: {
       big: { heading: "You found the spell, {names}!", headingNoName: "You found the spell!", body: "You found every word of the spell! Now stand by the cauldron and say it out loud, all together, to break the curse. Then tap the cauldron!" },
-      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten glowing pumpkins! Now run to the kitchen and find the biggest pot. Say the spell: Bubble, bubble, pumpkins glow, break the curse, away you go! Then tap the cauldron!" },
+      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten glowing pumpkins! Now run to the kitchen and find the biggest pot. Say the spell after me: Bubble, bubble, pumpkins glow, break the curse, away you go! Then tap the cauldron!" },
       earned: "You broke the curse!",
       earnedSay: "You broke the curse! Happy Halloween, my little pumpkins!",
       tapGift: "Tap the cauldron",
@@ -199,7 +199,7 @@
 
     // ---- Printables copy
     letter: {
-      greeting: "Dear Curse Breaker,",
+      greeting: "Dear my mortal friend,",
       paragraphs: [
         "I'm Hazel, a good witch from the spooky village of Hollowmoor, and I need your help. A grumpy old ghost has put a curse on our village, and now the pumpkins won't glow!",
         "I wrote a spell to break it, but a gust of wind blew its ten words away, and they landed in YOUR house. First, open the Spell Finder on your grown-up's phone. It's locked, and only a secret password will open it. Turn this letter over and paint the back. The password will appear, like a ghost out of the mist.",
@@ -212,7 +212,7 @@
         "Every clue you find has a picture code. Tap it in, and the Spell Finder will give you a word of the spell. Find all ten, say the spell over my cauldron, and the curse will break.",
         "Be brave. The bats and I are cheering for you!",
       ],
-      signoff: "With a wave of my wand,",
+      signoff: "Love from",
       postscript: "P.S. Stuck? Grown-ups know a little bit of magic too.",
     },
     board: {
@@ -220,7 +220,7 @@
       instructions: "Each time you find a clue, colour in that pumpkin. Big Detectives: write your spell word underneath.",
       wordLabel: "The spell is",
       treasureLabel: "In the cauldron, I found",
-      nameLabel: "Official Curse Breaker(s)",
+      nameLabel: "Hazel's official helper(s)",
     },
     treasureSign: { heading: "You broke the curse!", body: "Happy Halloween" }, // goes in the pot with the candy
 
@@ -228,7 +228,7 @@
       levelUp: [
         ["Flashlight hunt", "Play after dark with a flashlight. The outside clues are extra spooky (always with a grown-up)."],
         ["Candy at every clue", "Tuck a tiny treat beside each clue card as a prize for every find."],
-        ["Costume on", "Hunt in costume! Curse breakers work best in capes and witch hats."],
+        ["Costume on", "Hunt in costume! Spells work best in capes and witch hats."],
         ["Siblings of different ages", "Pair a Big Detective with a Little Helper: the little one taps the pictures, the big one reads the riddles."],
       ],
       playlist: [],
@@ -239,11 +239,11 @@
         fileLetter: "2-Hazels-Letter-Painting.pdf", fileNoPaint: "3-Hazels-Letter-No-Painting.pdf",
         paint: "Dark watercolour (purple, blue or black) will: the wax resists the paint and the letters appear, like a ghost out of the mist.",
         leaveLetter: "Leave Hazel's letter at the front door (with paint, a brush and a cup of water for the painting letter). Not on the doormat: a clue hides under it! Then knock loudly or ring the bell, and hide!",
-        critter: "A little bat sometimes flutters across the screen. Tap him and he squeaks. Who can spot him the most?",
-        swapLead: "No mailbox, or no broom?",
+        critter: "A little black cat sometimes creeps across the screen. Tap her and she meows. Who can spot her the most?",
+        swapLead: "Three clues are outside (the pumpkin, mailbox and doormat). Go with the kids and take a flashlight, or move them inside:",
         surprise: "The last riddle leads to the biggest pot in your kitchen: that's Hazel's cauldron. Put the candy inside with the \"You broke the curse!\" sign. Type what's in it at setup. It's revealed on the final screen when they say the spell and tap the cauldron.",
         finalNote: "(put the candy in it!)",
-        extraBox: ["Three clues are outside", "<p>The pumpkin by the front door, the mailbox and the doormat. Go with the kids and take a flashlight: it's the spookiest part! Rather stay in? Use the Swap-a-Riddle cards to move those clues inside.</p>"],
+        musicHeading: "Spooky music",
       },
     },
 
