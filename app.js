@@ -130,9 +130,11 @@
       const part = queue.shift(); if (!part) return;
       if (!part.key) return playNext(); // names and other dynamic bits are skipped in recorded mode
       player.onended = playNext;
-      player.onerror = () => { queue = []; speak(part.text); };
+      // Missing optional clips (Santa's "found it" lines) are skipped quietly; anything else falls back to the phone voice.
+      const fail = () => { if (part.optional) return playNext(); queue = []; speak(part.text); };
+      player.onerror = fail;
       player.src = `audio/${T.id}/${part.key}.mp3`;
-      const pr = player.play(); if (pr && pr.catch) pr.catch(() => { queue = []; speak(part.text); });
+      const pr = player.play(); if (pr && pr.catch) pr.catch((e) => { if (e && e.name === "NotAllowedError") { queue = []; speak(part.text); } else fail(); });
     }
     // say([{key, text}, ...]) — key = recording name, text = what the built-in voice says instead.
     function say(parts) {
@@ -450,8 +452,8 @@
         () => { stopSpeaking(); if (last) setTimeout(showFinale, 150); });
       const hintPart = { key: "hint-" + clue.next, text: spot.hint };
       const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([lit ? hintPart : { key: "riddle-" + clue.n, text: riddleText(clue.riddle) }]);
-      if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock }, hintPart]), 900);
-      else setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock }]), 700);
+      if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock, optional: true }, hintPart]), 900);
+      else setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock, optional: true }]), 700);
     }
 
     // ---------- 6. Finale under the tree
