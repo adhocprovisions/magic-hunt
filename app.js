@@ -19,7 +19,7 @@
   if (window.HUNT_THEMES && window.HUNT_THEMES[themeId]) start(window.HUNT_THEMES[themeId]);
   else {
     const s = document.createElement("script");
-    s.src = "themes/" + themeId + ".js";
+    s.src = "themes/" + themeId + ".js?v=" + (document.querySelector('script[src*="app.js"]') || { src: "" }).src.split("v=")[1];
     s.onload = () => start(window.HUNT_THEMES[themeId]);
     s.onerror = () => ($app.innerHTML = '<p class="loading">Couldn\'t load the hunt. Check your connection and refresh.</p>');
     document.head.appendChild(s);
@@ -133,7 +133,7 @@
       // Missing optional clips (Santa's "found it" lines) are skipped quietly; anything else falls back to the phone voice.
       const fail = () => { if (part.optional) return playNext(); queue = []; speak(part.text); };
       player.onerror = fail;
-      player.src = `audio/${T.id}/${part.key}.mp3`;
+      player.src = `audio/${T.id}/${part.key}.mp3?v=${T.audioVersion || 1}`;
       const pr = player.play(); if (pr && pr.catch) pr.catch((e) => { if (e && e.name === "NotAllowedError") { queue = []; speak(part.text); } else fail(); });
     }
     // say([{key, text}, ...]) — key = recording name, text = what the built-in voice says instead.
