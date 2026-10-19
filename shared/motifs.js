@@ -42,18 +42,20 @@
   };
 
   // Night-sky village scene (the hero art). Width/height are viewBox units; the SVG scales to its box.
-  M.village = function (P, { w = 1200, h = 380, seed = 4, houses = 9, trees = 16, moon = true } = {}) {
+  // inkSaver: a colour (e.g. "#fff") = print version — no night sky, just a few stars, so it uses far less ink.
+  M.village = function (P, { w = 1200, h = 380, seed = 4, houses = 9, trees = 16, moon = true, inkSaver = null } = {}) {
     const rnd = M.rand(seed);
     const hillBack = (x) => h * 0.64 + Math.sin(x / w * 5.2 + 1.3) * h * 0.04;
     const hillFront = (x) => h * 0.8 + Math.sin(x / w * 3.4 + 0.2) * h * 0.035;
     const path = (fn) => { let d = `M0 ${h} L0 ${fn(0).toFixed(1)}`; for (let x = 0; x <= w; x += 20) d += ` L${x} ${fn(x).toFixed(1)}`; return d + ` L${w} ${h}Z`; };
-    let s = `<rect width="${w}" height="${h}" fill="${P.navy}"/>`;
-    for (let i = 0; i < (w * h) / 2600; i++) {
+    const sky = inkSaver || P.navy, starC = inkSaver ? P.tan : P.cream;
+    let s = inkSaver ? "" : `<rect width="${w}" height="${h}" fill="${P.navy}"/>`;
+    for (let i = 0; i < (w * h) / (inkSaver ? 9000 : 2600); i++) {
       const x = rnd() * w, y = rnd() * h * 0.66, r = 0.8 + rnd() * 1.8;
-      if (rnd() < 0.12) s += `<path d="M${x} ${y - r * 3} L${x + r * 0.7} ${y - r * 0.7} L${x + r * 3} ${y} L${x + r * 0.7} ${y + r * 0.7} L${x} ${y + r * 3} L${x - r * 0.7} ${y + r * 0.7} L${x - r * 3} ${y} L${x - r * 0.7} ${y - r * 0.7}Z" fill="${P.cream}" opacity=".9"/>`;
-      else s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${P.cream}" opacity="${(0.45 + rnd() * 0.5).toFixed(2)}"/>`;
+      if (rnd() < 0.12) s += `<path d="M${x} ${y - r * 3} L${x + r * 0.7} ${y - r * 0.7} L${x + r * 3} ${y} L${x + r * 0.7} ${y + r * 0.7} L${x} ${y + r * 3} L${x - r * 0.7} ${y + r * 0.7} L${x - r * 3} ${y} L${x - r * 0.7} ${y - r * 0.7}Z" fill="${starC}" opacity=".9"/>`;
+      else s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${starC}" opacity="${(0.45 + rnd() * 0.5).toFixed(2)}"/>`;
     }
-    if (moon) { const mx = w * 0.84, my = h * 0.2, mr = h * 0.075; s += `<circle cx="${mx}" cy="${my}" r="${mr}" fill="${P.cream}"/><circle cx="${mx + mr * 0.45}" cy="${my - mr * 0.18}" r="${mr * 0.92}" fill="${P.navy}"/>`; }
+    if (moon) { const mx = w * 0.84, my = h * 0.2, mr = h * 0.075; s += `<circle cx="${mx}" cy="${my}" r="${mr}" fill="${inkSaver ? P.mustard : P.cream}"/><circle cx="${mx + mr * 0.45}" cy="${my - mr * 0.18}" r="${mr * 0.92}" fill="${sky}"/>`; }
     s += `<path d="${path(hillBack)}" fill="${P.snowBack}"/>`;
     const walls = [P.pink, P.mint, P.sky, P.butter];
     const items = [];

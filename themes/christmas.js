@@ -1,4 +1,4 @@
-/* THEME: The Christmas Magic Hunt
+/* THEME: Christmas Magic Hunt
    One file = one complete theme. The web app AND the printables both read from this file,
    so riddles, codes and secret letters can never get out of sync.
    To add a theme: copy this file, rename it, change the content, and register it (see ADDING-A-THEME.md). */
@@ -93,7 +93,7 @@
   window.HUNT_THEMES = window.HUNT_THEMES || {};
   window.HUNT_THEMES.christmas = {
     id: "christmas",
-    title: "The Christmas Magic Hunt",
+    title: "Christmas Magic Hunt",
     eyebrow: "A treasure hunt in ten clues",
     character: { name: "Santa", title: "North Pole" },
     machineName: "the Magic Finder",
