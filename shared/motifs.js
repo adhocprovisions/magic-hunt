@@ -71,6 +71,13 @@
     }
     return o;
   };
+  // A sitting black cat silhouette (tail curled), feet at base.
+  M.cat = function (x, base, s, color, eye, flip) {
+    const k = s / 100;
+    return `<g transform="translate(${x.toFixed(1)} ${base.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})"><path d="M-22 0 C-28 -26 -24 -46 -14 -56 L-18 -84 L-4 -70 H4 L18 -84 L14 -56 C24 -46 28 -26 22 0Z" fill="${color}"/>
+      <path d="M20 -2 C40 -2 46 -16 38 -30" stroke="${color}" stroke-width="8" fill="none" stroke-linecap="round"/>
+      ${eye ? `<ellipse cx="-7" cy="-58" rx="3.6" ry="2.6" fill="${eye}"/><ellipse cx="7" cy="-58" rx="3.6" ry="2.6" fill="${eye}"/>` : ""}</g>`;
+  };
   // A little flying bat (a "w" with ears), centred on x,y.
   M.bat = function (x, y, s, color) {
     return `<path transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${(s / 40).toFixed(3)})" d="M0 -4 l-3 -6 -2 5 C-10 -9 -18 -8 -24 -2 C-19 -2 -17 1 -16 4 C-12 0 -8 1 -6 4 C-4 1 -2 1 0 2 C2 1 4 1 6 4 C8 1 12 0 16 4 C17 1 19 -2 24 -2 C18 -8 10 -9 5 -5 l-2 -5 -3 6Z" fill="${color}"/>`;
@@ -92,7 +99,8 @@
       if (rnd() < 0.12) s += `<path d="M${x} ${y - r * 3} L${x + r * 0.7} ${y - r * 0.7} L${x + r * 3} ${y} L${x + r * 0.7} ${y + r * 0.7} L${x} ${y + r * 3} L${x - r * 0.7} ${y + r * 0.7} L${x - r * 3} ${y} L${x - r * 0.7} ${y - r * 0.7}Z" fill="${starC}" opacity=".9"/>`;
       else s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${starC}" opacity="${(0.45 + rnd() * 0.5).toFixed(2)}"/>`;
     }
-    if (moon) { const mx = w * 0.84, my = h * 0.2, mr = h * 0.075; s += `<circle cx="${mx}" cy="${my}" r="${mr}" fill="${inkSaver ? P.mustard : P.cream}"/><circle cx="${mx + mr * 0.45}" cy="${my - mr * 0.18}" r="${mr * 0.92}" fill="${sky}"/>`; }
+    if (moon && P.sceneKind === "spooky") { const mx = w * 0.8, my = h * 0.33, mr = h * 0.12; s += `<circle cx="${mx}" cy="${my}" r="${mr * 1.5}" fill="${P.mustard}" opacity="${inkSaver ? 0 : 0.12}"/><circle cx="${mx}" cy="${my}" r="${mr}" fill="${inkSaver ? P.mustard : P.butter}"/><circle cx="${mx - mr * 0.3}" cy="${my - mr * 0.2}" r="${mr * 0.18}" fill="${P.tan}" opacity=".35"/><circle cx="${mx + mr * 0.35}" cy="${my + mr * 0.3}" r="${mr * 0.12}" fill="${P.tan}" opacity=".35"/>`; }
+    else if (moon) { const mx = w * 0.84, my = h * 0.2, mr = h * 0.075; s += `<circle cx="${mx}" cy="${my}" r="${mr}" fill="${inkSaver ? P.mustard : P.cream}"/><circle cx="${mx + mr * 0.45}" cy="${my - mr * 0.18}" r="${mr * 0.92}" fill="${sky}"/>`; }
     s += `<path d="${path(hillBack)}" fill="${P.snowBack}"/>`;
     const spooky = P.sceneKind === "spooky";
     if (spooky && !inkSaver) for (let i = 0; i < Math.max(2, Math.round(w / 260)); i++) s += M.bat(w * (0.1 + rnd() * 0.65), h * (0.1 + rnd() * 0.3), h * (0.07 + rnd() * 0.05), P.navyDeep);
@@ -106,8 +114,9 @@
       const fn = it.back ? hillBack : hillFront, k = it.back ? 0.72 : 1;
       if (!it.back && !front) { s += `<path d="${path(hillFront)}" fill="${P.snow}"/>`; front = "1"; }
       if (it.t === "h") {
-        const hs = M.house(it.x, fn(it.x) + 4, (40 + rnd() * 14) * k * (h / 300), walls[i % walls.length], P, rnd);
-        s += spooky ? `<g transform="rotate(${((rnd() - 0.5) * 7).toFixed(1)} ${it.x.toFixed(0)} ${fn(it.x).toFixed(0)})">${hs}</g>` : hs;
+        // Spooky scenes swap the houses for black cats sitting on the hills.
+        if (spooky) s += M.cat(it.x, fn(it.x) + 3, (58 + rnd() * 20) * k * (h / 300), P.ink, P.mustard, rnd() < 0.5);
+        else s += M.house(it.x, fn(it.x) + 4, (40 + rnd() * 14) * k * (h / 300), walls[i % walls.length], P, rnd);
       } else if (spooky) {
         if (rnd() < 0.62) s += M.bareTree(it.x, fn(it.x) + 3, (46 + rnd() * 50) * k * (h / 300), P.pine, rnd);
         else s += M.pumpkin(it.x, fn(it.x) + 3, (12 + rnd() * 8) * k * (h / 300), P, !it.back);

@@ -7,7 +7,7 @@
   const P = {
     sceneKind: "spooky", // tells the shared drawing helpers to draw crooked houses, bare trees, pumpkins and bats
     paper: "#f3ebdc", card: "#fbf6ec", ink: "#2b2433", inkSoft: "#6b6170",
-    navy: "#3d3160", navyDeep: "#2a2144",
+    navy: "#241b3b", navyDeep: "#17112a",
     red: "#e0702b", redDeep: "#a94a17",
     pine: "#3b3a33", sage: "#8f9e72", tan: "#b59a66", roof: "#5a4757", roofLine: "#3a2d3b",
     pink: "#e3a9a0", mint: "#c3cfa6", sky: "#aba5cc", butter: "#ead7a2", lilac: "#a99bc0",
@@ -151,7 +151,7 @@
       books: ["Some say that at midnight my stories creep out,", "to tiptoe through rooms when there's no one about.", "I stand very still with my shelves in a row.", "Your next clue is hiding where all the books go!"],
       pumpkin: ["I'm round and I'm orange, with a face carved to grin.", "I sit by the front door with a light glowing within.", "Take a grown-up and a flashlight, and step into the night.", "Your next clue is hiding beside me, just out of sight!"],
       mailbox: ["I wait by the path with my mouth open wide,", "for letters and parcels to drop right inside.", "But tonight, a ghost posted something for you.", "Open me up for your next spooky clue!"],
-      doormat: ["I lie by the front door, all bristly and flat.", "Muddy boots wipe on me, and so does the cat!", "But tonight there's a secret tucked under, out of sight.", "Lift up my corner and peek... careful, I might bite!"],
+      doormat: ["I lie by the front door, all bristly and flat.", "Muddy boots wipe on me, and so would a black cat!", "But tonight there's a secret tucked under, out of sight.", "Lift up my corner and peek... careful the clue doesn't blow away in the night..."],
       boots: ["We hang in a row like a line of tall ghosts,", "with long empty sleeves (we're just coats, at the most!).", "Our boots wait below, side by side on the floor.", "Search where we hang, by the hooks or the door!"],
       couch: ["I'm squishy and comfy, but who's that below?", "A creature that lurks where the cushions won't show!", "It's only a clue, so be brave, never fear.", "Dig under my cushions: your next one is here!"],
       window: ["I'm made out of glass, and the moon peeks right in.", "Was that a bat flapping by with a grin?", "Press your nose close to the shadows outside.", "Your next clue is near me, where spooky things hide."],
@@ -169,7 +169,7 @@
       { n: 4, at: "mailbox", hideAt: "In the mailbox (outside)", next: "doormat", code: ["moon", "owl", "bat", "cat"], letter: "glow",
         unlock: "A letter from a ghost! Spooky... but friendly." },
       { n: 5, at: "doormat", hideAt: "Under the doormat (outside)", next: "boots", code: ["hat", "pumpkin", "owl", "ghost"], letter: "break",
-        unlock: "It didn't bite! Now hurry back inside. It's getting dark out there." },
+        unlock: "Now hurry back inside. It's getting dark out there." },
       { n: 6, at: "boots", hideAt: "With the coats and boots", next: "couch", code: ["bat", "candy", "moon", "pumpkin"], letter: "the",
         unlock: "Those sleeves looked like they were reaching for you! The spell is getting stronger." },
       { n: 7, at: "couch", hideAt: "Under a couch cushion", next: "window", code: ["owl", "ghost", "cat", "candy"], letter: "curse",
@@ -278,11 +278,10 @@
       const W = 420, H = 380, rnd = Mo.rand(23);
       let s = `<rect width="${W}" height="${H}" fill="${P.navy}"/>`;
       for (let i = 0; i < 60; i++) s += `<circle class="tw" style="animation-delay:${(rnd() * 2).toFixed(2)}s" cx="${(rnd() * W).toFixed(0)}" cy="${(rnd() * H * 0.55).toFixed(0)}" r="${(0.8 + rnd() * 1.5).toFixed(1)}" fill="${P.cream}"/>`;
-      s += `<circle cx="300" cy="86" r="52" fill="${P.mustard}" opacity=".95"/><circle cx="286" cy="74" r="8" fill="${P.tan}" opacity=".35"/><circle cx="316" cy="104" r="6" fill="${P.tan}" opacity=".35"/>`;
+      s += `<circle cx="300" cy="86" r="80" fill="${P.mustard}" opacity=".12"/><circle cx="300" cy="86" r="56" fill="${P.butter}"/><circle cx="286" cy="74" r="8" fill="${P.tan}" opacity=".35"/><circle cx="316" cy="104" r="6" fill="${P.tan}" opacity=".35"/>`;
       [[260, 76, 34], [336, 58, 26], [96, 70, 30], [150, 118, 22], [206, 50, 18]].forEach(([x, y, z], i) => (s += `<g class="tw" style="animation-delay:${i * 0.3}s">${Mo.bat(x, y, z, P.navyDeep)}</g>`));
       s += `<path d="M0 ${H} L0 262 Q110 236 210 256 T420 246 L420 ${H}Z" fill="${P.snowBack}"/>`;
-      const houses = [[16, 262, 46, P.lilac, -4], [74, 258, 36, P.sage, 3], [322, 258, 40, P.butter, -3], [370, 254, 44, P.pink, 4]];
-      houses.forEach(([x, b, sz, c, r]) => (s += `<g transform="rotate(${r} ${x} ${b})">${Mo.house(x, b, sz, c, P, rnd)}</g>`));
+      s += Mo.cat(40, 264, 58, P.ink, P.mustard) + Mo.cat(92, 258, 40, P.ink, P.mustard, true) + Mo.cat(350, 260, 52, P.ink, P.mustard, true) + Mo.cat(392, 256, 36, P.ink, P.mustard);
       s += Mo.bareTree(128, 270, 92, P.pine, rnd) + Mo.bareTree(298, 266, 80, P.pine, rnd);
       s += `<path d="M0 ${H} L0 318 Q140 296 220 314 T420 306 L420 ${H}Z" fill="${P.snow}"/>`;
       s += `<defs><radialGradient id="cauldronGlow"><stop offset="0" stop-color="${P.slime}" stop-opacity=".6"/><stop offset="1" stop-color="${P.slime}" stop-opacity="0"/></radialGradient></defs><circle class="glow" cx="210" cy="250" r="140" fill="url(#cauldronGlow)"/>`;
