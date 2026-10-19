@@ -51,12 +51,14 @@
     const currentName = () => (state.names.length ? state.names[state.turn % state.names.length] : "");
 
     // ---------- Sound: synthesised with Web Audio, so there are no audio files to host or license.
+    // Phones only allow sound after a tap, so the first tap anywhere "unlocks" audio and speech (see unlockAudio).
     let ctx = null;
     const audio = () => {
       if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
-      if (ctx.state === "suspended") ctx.resume();
+      if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
       return ctx;
     };
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && ctx) { try { ctx.resume(); } catch (e) {} } });
     function tone(freq, t0, dur, type = "sine", gain = 0.2, toFreq) {
       const c = audio(); if (!c) return;
       const o = c.createOscillator(), g = c.createGain();
@@ -68,7 +70,7 @@
     }
     function noise(t0, dur, freq, gain) {
       const c = audio(); if (!c) return;
-      const len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      const len = Math.max(1, Math.floor(c.sampleRate * dur)), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
       const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
       src.buffer = buf; f.type = "bandpass"; f.frequency.value = freq; f.Q.value = 3; g.gain.value = gain;
@@ -77,44 +79,90 @@
     const bell = (f, t, v = 0.16) => { tone(f, t, 1.4, "sine", v); tone(f * 2.76, t, 0.6, "sine", v * 0.35); tone(f * 5.4, t, 0.25, "sine", v * 0.15); };
     // Preset library — future themes can add presets (e.g. "creak", "waves", "chimes") here.
     const PRESETS = {
-      bell: (t) => bell(1318, t, 0.1),
-      sleighbells: (t) => { for (let i = 0; i < 16; i++) { const tt = t + i * 0.055 + Math.random() * 0.02; noise(tt, 0.05, 6500 + Math.random() * 2500, 0.5); tone(2400 + Math.random() * 1600, tt, 0.12, "sine", 0.03); } bell(1046, t + 0.05, 0.12); bell(1568, t + 0.25, 0.1); },
-      thud: (t) => { tone(220, t, 0.22, "triangle", 0.18); tone(165, t + 0.16, 0.32, "triangle", 0.18); },
-      carillon: (t) => { [1046, 1318, 1568, 2093, 1568, 2093].forEach((f, i) => bell(f, t + i * 0.16, 0.14)); PRESETS.sleighbells(t + 1); },
-      squeak: (t) => { tone(2300, t, 0.09, "sine", 0.13, 3700); tone(2500, t + 0.13, 0.12, "sine", 0.12, 3900); tone(3100, t + 0.13, 0.08, "triangle", 0.03); },
-      unlock: (t) => { tone(600, t, 0.08, "square", 0.05); tone(900, t + 0.09, 0.1, "square", 0.05); PRESETS.carillon(t + 0.2); },
+      bell: (t) => bell(1318, t, 0.14),
+      sleighbells: (t) => { for (let i = 0; i < 16; i++) { const tt = t + i * 0.055 + Math.random() * 0.02; noise(tt, 0.05, 6500 + Math.random() * 2500, 0.6); tone(2400 + Math.random() * 1600, tt, 0.12, "sine", 0.04); } bell(1046, t + 0.05, 0.16); bell(1568, t + 0.25, 0.14); },
+      thud: (t) => { tone(220, t, 0.22, "triangle", 0.22); tone(165, t + 0.16, 0.32, "triangle", 0.22); },
+      carillon: (t) => { [1046, 1318, 1568, 2093, 1568, 2093].forEach((f, i) => bell(f, t + i * 0.16, 0.17)); PRESETS.sleighbells(t + 1); },
+      squeak: (t) => { tone(2300, t, 0.09, "sine", 0.16, 3700); tone(2500, t + 0.13, 0.12, "sine", 0.15, 3900); tone(3100, t + 0.13, 0.08, "triangle", 0.04); },
+      unlock: (t) => { tone(600, t, 0.08, "square", 0.06); tone(900, t + 0.09, 0.1, "square", 0.06); PRESETS.carillon(t + 0.2); },
     };
     const play = (name) => {
       if (state.muted) return;
       const c = audio(); if (!c) return;
-      const p = PRESETS[(T.sounds && T.sounds[name]) || name]; if (p) p(c.currentTime + 0.01);
+      const p = PRESETS[(T.sounds && T.sounds[name]) || name]; if (p) p(c.currentTime + 0.02);
       if (navigator.vibrate && name === "wrong") navigator.vibrate(60);
     };
 
-    // ---------- Read-aloud. Prefers the British "Serena" voice (best: Serena Premium/Enhanced on iPhone),
-    // then other British voices, then any English voice. Silently skipped if the phone has no speech.
+    // ---------- Narration.
+    // 1) Recorded voice: if the theme sets voiceFiles: true, the app plays audio/<theme>/<key>.mp3
+    //    (see VOICE-SCRIPT.md). Missing files fall back to 2).
+    // 2) The phone's built-in voice (best: Serena Premium on iPhone; Google UK English on Android).
     const canSpeak = "speechSynthesis" in window;
     let voices = [];
     const loadVoices = () => { try { voices = speechSynthesis.getVoices() || []; } catch (e) {} };
     if (canSpeak) { loadVoices(); try { speechSynthesis.addEventListener("voiceschanged", loadVoices); } catch (e) {} }
     function pickVoice() {
       const en = voices.filter((v) => /^en/i.test(v.lang));
-      const byName = [/serena.*(premium|enhanced)/i, /serena/i, /(jamie|daniel|kate|stephanie|oliver).*(premium|enhanced)/i, /google uk english female/i, /(libby|sonia|maisie|hazel|kate|daniel)/i];
-      for (const r of byName) { const v = en.find((x) => r.test(x.name)); if (v) return v; }
-      return en.find((x) => /en[-_]GB/i.test(x.lang)) || en[0] || null;
+      const gb = (v) => /en[-_]GB/i.test(v.lang);
+      const hq = (v) => /(premium|enhanced|natural|neural)/i.test(v.name);
+      return en.find((v) => /serena/i.test(v.name) && hq(v)) || en.find((v) => gb(v) && hq(v)) || en.find(hq) ||
+        en.find((v) => /google uk english female/i.test(v.name)) || en.find((v) => /serena/i.test(v.name)) ||
+        en.find((v) => /google uk english/i.test(v.name)) || en.find(gb) || en[0] || null;
     }
+    let speakTimer = null;
     function speak(text) {
       if (!canSpeak || state.muted || !text) return;
       try {
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(String(text).replace(/[“”]/g, ""));
-        const v = pickVoice();
-        if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-GB";
-        u.rate = 0.9; u.pitch = 1.05;
-        speechSynthesis.speak(u);
+        speechSynthesis.cancel(); clearTimeout(speakTimer);
+        // Small gap after cancel(): some browsers drop an utterance spoken straight after cancelling.
+        speakTimer = setTimeout(() => {
+          const u = new SpeechSynthesisUtterance(String(text).replace(/[“”]/g, ""));
+          const v = pickVoice();
+          if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "en-GB";
+          u.rate = 0.95; u.pitch = 1;
+          speechSynthesis.speak(u);
+        }, 120);
       } catch (e) {}
     }
-    const stopSpeaking = () => { try { canSpeak && speechSynthesis.cancel(); } catch (e) {} };
+    const player = new Audio(); player.preload = "auto";
+    let queue = [];
+    function playNext() {
+      const part = queue.shift(); if (!part) return;
+      if (!part.key) return playNext(); // names and other dynamic bits are skipped in recorded mode
+      player.onended = playNext;
+      player.onerror = () => { queue = []; speak(part.text); };
+      player.src = `audio/${T.id}/${part.key}.mp3`;
+      const pr = player.play(); if (pr && pr.catch) pr.catch(() => { queue = []; speak(part.text); });
+    }
+    // say([{key, text}, ...]) — key = recording name, text = what the built-in voice says instead.
+    function say(parts) {
+      if (state.muted) return;
+      parts = parts.filter((p) => p && (p.text || p.key));
+      if (T.voiceFiles) { stopSpeaking(); queue = parts.slice(); playNext(); }
+      else speak(parts.map((p) => p.text).filter(Boolean).join(" "));
+    }
+    const stopSpeaking = () => { try { canSpeak && speechSynthesis.cancel(); clearTimeout(speakTimer); } catch (e) {} try { queue = []; player.pause(); } catch (e) {} };
+
+    function silentWav() {
+      const n = 800, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+      const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+      w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+      let bin = ""; new Uint8Array(buf).forEach((x) => (bin += String.fromCharCode(x)));
+      return "data:audio/wav;base64," + btoa(bin);
+    }
+    // First tap anywhere: wake up Web Audio, the recorded-voice player and speech (iPhone/iPad need this).
+    let audioUnlocked = false;
+    function unlockAudio() {
+      if (audioUnlocked) return; audioUnlocked = true;
+      const c = audio();
+      if (c) { try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch (e) {} }
+      try { player.muted = true; player.src = silentWav();
+        const pr = player.play(); const done = () => { try { player.pause(); player.muted = false; } catch (e) {} };
+        if (pr && pr.then) pr.then(done, done); else done(); } catch (e) {}
+      if (canSpeak) { try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } catch (e) {} }
+    }
+    ["pointerdown", "touchend", "click", "keydown"].forEach((ev) => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
     const riddleText = (lines) => lines.join(" ");
 
     // ---------- Shared page chrome
@@ -191,7 +239,7 @@
         document.querySelectorAll(".pw-slot").forEach((el, i) => { el.textContent = pw[i] || ""; el.classList.toggle("filled", !!pw[i]); });
         document.getElementById("pwUndo").disabled = !pw.length;
       };
-      const h = document.getElementById("hearLock"); if (h) h.onclick = () => speak(T.lock.heading + ". " + T.lock.body);
+      const h = document.getElementById("hearLock"); if (h) h.onclick = () => say([{ key: "lock", text: T.lock.heading + ". " + T.lock.body }]);
       document.getElementById("pwUndo").onclick = () => { pw.pop(); draw(); };
       document.querySelectorAll(".lt").forEach((b) => (b.onclick = () => {
         if (pw.length >= T.password.length) return;
@@ -205,13 +253,13 @@
       if (pw.join("") === T.password) return doUnlock();
       play("wrong");
       const s = document.getElementById("pwSlots"); s.classList.remove("shake"); void s.offsetWidth; s.classList.add("shake");
-      setMsg(T.lock.wrong); speak(T.lock.wrong);
+      setMsg(T.lock.wrong); say([{ key: "lock-wrong", text: T.lock.wrong }]);
       setTimeout(() => { pw = []; document.querySelectorAll(".pw-slot").forEach((el) => { el.textContent = ""; el.classList.remove("filled"); }); document.getElementById("pwUndo").disabled = true; }, 700);
     }
     function doUnlock() {
       const pl = document.getElementById("padlock"); if (pl) pl.classList.add("open");
       document.querySelectorAll(".pw-slot").forEach((el) => el.classList.add("glow"));
-      play("unlock"); snowBurst(); setMsg(T.lock.unlocked); speak(T.lock.unlocked);
+      play("unlock"); snowBurst(); setMsg(T.lock.unlocked); setTimeout(() => say([{ key: "unlocked", text: T.lock.unlocked }]), 900);
       setTimeout(() => { state.unlocked = true; save(); render(); }, 1600);
     }
 
@@ -252,8 +300,8 @@
           <div class="row">${canSpeak ? `<button class="ghost" data-speak>Read it aloud</button>` : ""}
             <button class="btn" data-close>${esc(T.firstRiddle.go)}</button></div>
         </div>`, () => { stopSpeaking(); state.firstSeen = true; save(); });
-      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => speak(riddleText(lines));
-      setTimeout(() => speak((who ? "Ready, " + who + "? " : "") + "Here's your first riddle. " + riddleText(lines)), 700);
+      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([{ key: "first-riddle", text: riddleText(lines) }]);
+      setTimeout(() => say([{ text: who ? "Ready, " + who + "?" : "" }, { key: "first-riddle", text: "Here's your first riddle. " + riddleText(lines) }]), 700);
     }
 
     // ---------- 5. The hunt
@@ -276,6 +324,7 @@
           ${complete
             ? `<p class="prompt">All ten found!</p><div class="row"><button class="btn" id="openFinale">Open the surprise</button></div>`
             : `${multi ? `<p class="turn-pill">${esc(fill(T.turn, { name: currentName() }))}</p>` : ""}
+               ${little() && done ? lookBy() : ""}
                <p class="prompt">${esc(T.prompt[state.mode || "big"])}</p>
                <div class="slots" id="slots">${[0, 1, 2, 3].map(() => '<div class="slot"></div>').join("")}</div>
                <div class="keypad">${T.symbols.map((s) => `<button class="key" data-sym="${s.id}" aria-label="${esc(s.name)}"><span class="tile">${icon(s.svg())}</span><span class="nm">${esc(s.name)}</span></button>`).join("")}</div>
@@ -285,11 +334,19 @@
         eyebrow: T.eyebrow,
         sub: `<button class="mode-pill" id="modePill">${state.names.length ? esc(namesText()) + " · " : ""}${esc(m.label)}</button>`,
       });
+      const hr = document.getElementById("hearAgain"); if (hr) hr.onclick = () => { const c = T.clues.find((k) => k.n === state.solved[state.solved.length - 1]); say([{ key: "riddle-" + c.n, text: riddleText(c.riddle) }]); };
       document.getElementById("modePill").onclick = () => setMsg("Grown-ups can change this: hold the Grown-ups button.");
       if (complete) { document.getElementById("openFinale").onclick = showFinale; return; }
       document.querySelectorAll(".key").forEach((k) => k.addEventListener("click", () => press(k.dataset.sym, k)));
       document.getElementById("undo").onclick = () => { entry.pop(); drawSlots(); };
       drawSlots();
+    }
+    // Little Helpers: keep a picture of where to look next on the main screen, so they don't forget.
+    function lookBy() {
+      const c = T.clues.find((k) => k.n === state.solved[state.solved.length - 1]); if (!c) return "";
+      const spot = T.spots[c.next];
+      return `<div class="look-by"><span class="lb-pic">${icon(spot.svg())}</span><span class="lb-txt"><small>Look by</small><b>${esc(spot.name)}</b></span>
+        ${canSpeak || T.voiceFiles ? `<button class="ghost small" id="hearAgain" aria-label="Hear the riddle again">${iconSound()}</button>` : ""}</div>`;
     }
     function ornament(n, done) {
       if (T.progressIcon) return T.progressIcon(n, done);
@@ -368,9 +425,9 @@
               <button class="btn" data-close>${last ? "See the surprise" : "Off I go!"}</button></div>
           </div>`,
         () => { stopSpeaking(); if (last) setTimeout(showFinale, 150); });
-      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => speak(riddleText(clue.riddle));
-      if (lit) setTimeout(() => speak(`${cheer ? cheer + " " : ""}${clue.unlock} ${last ? "" : "Here's your riddle. "}${riddleText(clue.riddle)}`), 900);
-      else if (cheer) setTimeout(() => speak(cheer), 700);
+      const b = el.querySelector("[data-speak]"); if (b) b.onclick = () => say([{ key: "riddle-" + clue.n, text: riddleText(clue.riddle) }]);
+      if (lit) setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock }, { key: "riddle-" + clue.n, text: (last ? "" : "Here's your riddle. ") + riddleText(clue.riddle) }]), 900);
+      else setTimeout(() => say([{ text: cheer }, { key: "found-" + clue.n, text: clue.unlock }]), 700);
     }
 
     // ---------- 6. Finale under the tree
@@ -409,11 +466,11 @@
         const g = el.querySelector("#gift"); if (g.classList.contains("open")) return;
         g.classList.add("open"); play("correct"); fx.burst();
         setTimeout(() => { el.querySelector("#reveal").hidden = false; g.querySelector("span").textContent = ""; }, 450);
-        speak(T.finale.earned + " " + prize + "!");
+        say([{ key: "earned", text: T.finale.earned + " " + prize + "!" }]);
       };
       el.querySelector("[data-close]").onclick = () => { fx.stop(); stopSpeaking(); el.remove(); };
       fx.burst();
-      setTimeout(() => speak(heading + " " + f.body + " " + T.finale.tapGift + "."), 1400);
+      setTimeout(() => say([{ text: who ? heading : "" }, { key: "finale-" + (state.mode || "big"), text: (who ? "" : heading + " ") + f.body + " " + T.finale.tapGift + "." }]), 1400);
     }
 
     // Night-time celebration: glowing tree, twinkling lights, lit-up houses, presents.
@@ -517,16 +574,19 @@
       inp.addEventListener("input", () => set(inp.value));
       el.querySelectorAll("[data-idea]").forEach((c) => (c.onclick = () => { inp.value = c.dataset.idea; set(inp.value); }));
     }
-    const voiceBlock = () => `<h3>Voice</h3><p class="note" style="margin:0 0 8px" id="voiceNote"></p>${canSpeak ? '<button class="ghost small" id="testVoice">Test the voice</button>' : ""}`;
+    const voiceBlock = () => `<h3>Sound &amp; voice</h3><button class="ghost small" id="testVoice">Test sound and voice</button>
+      <p class="note" style="margin:8px 0 0" id="voiceNote"></p>
+      <p class="note" style="margin:6px 0 0">No sound? On iPhone or iPad, turn off Silent mode (the switch on the side, or the bell in Control Centre) and turn the volume up.</p>`;
     function bindVoice(el) {
       const vn = el.querySelector("#voiceNote"); if (!vn) return;
       const set = () => {
         const v = canSpeak ? pickVoice() : null;
-        vn.textContent = !canSpeak ? "This phone can't read aloud." : v && /serena/i.test(v.name) ? "Using " + v.name + ". Lovely." :
-          "Using " + (v ? v.name : "the default voice") + ". For the best voice on iPhone: Settings → Accessibility → Spoken Content → Voices → English → English (UK) → download Serena (Premium).";
+        vn.textContent = T.voiceFiles ? "Using the recorded narrator." : !canSpeak ? "This device can't read aloud, so the riddles appear on screen only." :
+          v && /(premium|enhanced|natural|neural)/i.test(v.name) ? "Voice: " + v.name + ". Lovely." :
+          "Voice: " + (v ? v.name : "default") + ". For a nicer voice on iPhone/iPad: Settings → Accessibility → Spoken Content → Voices → English → English (UK) → Serena (Premium). On Android: Settings → Text-to-speech → Google, English (UK).";
       };
       set(); setTimeout(set, 800);
-      const tv = el.querySelector("#testVoice"); if (tv) tv.onclick = () => speak("Ho ho ho! Merry Christmas. The magic is ready.");
+      const tv = el.querySelector("#testVoice"); if (tv) tv.onclick = () => { play("correct"); setTimeout(() => say([{ key: "test", text: "Ho ho ho! Merry Christmas. The magic is ready." }]), 600); };
     }
 
     function openParent() {
@@ -634,28 +694,36 @@
       </svg>`;
     }
     (function mouse() {
+      // He lives in the scenery (the snowy hill at the top, the pine trees at the bottom), so he never covers buttons.
+      const lane = document.createElement("div"); lane.className = "mouse-lane"; lane.hidden = true;
       const m = document.createElement("button");
       m.className = "mouse"; m.type = "button"; m.setAttribute("aria-label", "A little mouse! Tap him.");
       m.innerHTML = `<span class="body">${mouseSvg()}</span><span class="squeak">Squeak!</span>`;
-      m.hidden = true;
-      document.body.appendChild(m);
-      let anim = null, busy = false, dir = 1;
+      lane.appendChild(m); document.body.appendChild(lane);
+      let anim = null, busy = false, dir = 1, W = 0, peeking = false;
       const blocked = () => document.hidden || document.querySelector(".sheet, .finale");
       function schedule(ms) { setTimeout(appear, ms != null ? ms : 14000 + Math.random() * 16000); }
-      function done() { busy = false; m.hidden = true; m.classList.remove("running", "caught", "peek"); schedule(); }
+      function done() { busy = false; lane.hidden = true; m.classList.remove("running", "caught"); schedule(); }
+      function spot() {
+        const els = [...document.querySelectorAll(".hero, .foot-art")].map((e) => ({ e, r: e.getBoundingClientRect() }))
+          .filter(({ r }) => r.height > 20 && r.bottom > 50 && r.top < innerHeight - 30);
+        return els.length ? els[Math.floor(Math.random() * els.length)] : null;
+      }
       function appear() {
         if (blocked()) return schedule(5000);
-        busy = true; m.hidden = false;
-        const W = innerWidth, peek = still || Math.random() < 0.4;
+        const s = spot(); if (!s) return schedule(6000);
+        const r = s.r, hero = s.e.classList.contains("hero");
+        W = r.width;
+        Object.assign(lane.style, { left: r.left + scrollX + "px", top: r.bottom + scrollY - (hero ? 104 : 96) + "px", width: W + "px" });
+        busy = true; lane.hidden = false;
+        peeking = still || (hero && Math.random() < 0.4);
         dir = Math.random() < 0.5 ? 1 : -1;
         m.style.setProperty("--dir", dir);
-        if (peek) {
-          // peek in from a side edge, halfway up, then retreat
-          const fromLeft = dir === 1, y = innerHeight * (0.3 + Math.random() * 0.45);
-          m.style.top = y + "px"; m.style.bottom = "auto";
-          m.style.left = fromLeft ? "-70px" : W + "px";
-          m.classList.add("peek");
-          const out = fromLeft ? 44 : -44;
+        m.style.transform = "";
+        if (peeking) {
+          // peek in from the edge of the scene, have a look around, then retreat
+          const fromLeft = dir === 1, start = fromLeft ? -70 : W, out = fromLeft ? 46 : -46;
+          m.style.left = start + "px";
           anim = still
             ? m.animate([{ opacity: 0, transform: `translateX(${out}px) scaleX(${dir})` }, { opacity: 1, offset: 0.15 }, { opacity: 1, offset: 0.85 }, { opacity: 0, transform: `translateX(${out}px) scaleX(${dir})` }], { duration: 3200, fill: "both" })
             : m.animate([
@@ -664,19 +732,17 @@
                 { transform: `translateX(${out}px) scaleX(${dir})`, offset: 0.82 },
                 { transform: `translateX(0) scaleX(${dir})` }], { duration: 3000, easing: "ease-in-out", fill: "both" });
         } else {
-          // scamper along the bottom, stop for a sniff in the middle, then dash off
-          m.style.top = "auto"; m.style.bottom = `calc(${28 + Math.random() * 10}px + env(safe-area-inset-bottom))`;
-          m.style.left = dir === 1 ? "-80px" : W + 10 + "px";
-          const dist = (W + 90) * dir;
+          // scamper across, stop for a sniff in the middle, then dash off
+          m.style.left = (dir === 1 ? -80 : W + 10) + "px";
+          const dist = (W + 90) * dir, dur = Math.max(3200, Math.min(6000, W * 12));
           m.classList.add("running");
           anim = m.animate([
             { transform: `translateX(0) scaleX(${dir})` },
             { transform: `translateX(${dist * 0.45}px) scaleX(${dir})`, offset: 0.38 },
             { transform: `translateX(${dist * 0.47}px) scaleX(${dir})`, offset: 0.62 },
-            { transform: `translateX(${dist}px) scaleX(${dir})` }], { duration: 5200, easing: "linear", fill: "both" });
-          anim.onfinish = null;
-          setTimeout(() => m.classList.remove("running"), 5200 * 0.38);
-          setTimeout(() => m.classList.add("running"), 5200 * 0.62);
+            { transform: `translateX(${dist}px) scaleX(${dir})` }], { duration: dur, easing: "linear", fill: "both" });
+          setTimeout(() => busy && m.classList.remove("running"), dur * 0.38);
+          setTimeout(() => busy && m.classList.add("running"), dur * 0.62);
         }
         anim.onfinish = done;
       }
@@ -689,11 +755,11 @@
         const cur = new DOMMatrix(getComputedStyle(m).transform).m41;
         anim.onfinish = null; anim.cancel();
         m.style.transform = `translateX(${cur}px) scaleX(${dir})`;
-        // hop, then dash back the way he came
+        // hop, then dash off
         setTimeout(() => {
           m.classList.add("running");
-          const away = cur + (m.classList.contains("peek") ? -Math.sign(cur || dir) * 140 : dir * (innerWidth + 120));
-          const fd = m.classList.contains("peek") ? -dir : dir;
+          const fd = peeking ? -dir : dir;
+          const away = peeking ? cur - dir * 160 : cur + dir * (W + 160);
           anim = m.animate([{ transform: `translateX(${cur}px) scaleX(${fd})` }, { transform: `translateX(${away}px) scaleX(${fd})` }], { duration: 700, easing: "ease-in", fill: "both" });
           anim.onfinish = done;
         }, 650);
