@@ -496,7 +496,7 @@
       };
       el.querySelector("[data-close]").onclick = () => { fx.stop(); stopSpeaking(); el.remove(); };
       fx.burst();
-      setTimeout(() => say([{ text: who ? heading : "" }, { key: "finale-" + (state.mode || "big"), text: (who ? "" : heading + " ") + f.body + " " + T.finale.tapGift + "." }]), 1400);
+      setTimeout(() => say([{ text: who ? heading : "" }, { key: "finale-" + (state.mode || "big"), text: (who ? "" : heading + " ") + f.body }]), 1400);
     }
 
     // Night-time celebration: glowing tree, twinkling lights, lit-up houses, presents.

@@ -178,8 +178,8 @@
     ].map(function (c) { c.riddle = null; return c; }),
 
     finale: {
-      big: { heading: "You found the magic, {names}!", headingNoName: "You found the magic!", body: "You cracked every code and spelled the magic word. Now run to the Christmas tree!" },
-      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten magic snowflakes! Now run to the Christmas tree!" },
+      big: { heading: "You found the magic, {names}!", headingNoName: "You found the magic!", body: "You cracked every code and spelled the magic word. Now tap the present to open your surprise!" },
+      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten magic snowflakes! Now tap the present to open your surprise!" },
       earned: "You've earned",
       tapGift: "Tap the present to open it",
       defaultSurprise: "a Christmas surprise",
