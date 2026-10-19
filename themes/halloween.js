@@ -179,7 +179,7 @@
       { n: 9, at: "bed", hideAt: "Under a bed (near the edge)", next: "mirror", code: ["cat", "pumpkin", "moon", "owl"], letter: "you",
         unlock: "No monsters! Just a very brave detective. One more clue to go." },
       { n: 10, at: "mirror", hideAt: "By a mirror", next: "pot", code: ["ghost", "hat", "bat", "cat"], letter: "go",
-        unlock: "That's all ten words of the spell!! Solve one last riddle, and break the curse..." },
+        unlock: "That's all ten words of the spell!! Solve one last riddle, and the curse will reverse!" },
     ].map(function (c) { c.riddle = null; return c; }),
 
     finale: {
