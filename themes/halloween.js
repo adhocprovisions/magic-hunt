@@ -119,8 +119,8 @@
       big: { label: "Big Detectives", ages: "Ages 6–10", blurb: "Enter codes in order, solve the creepy riddles and collect the ten words of the spell." },
     },
 
-    password: "BOO",
-    passwordDecoys: ["G", "S", "T"],
+    password: "GHOST",
+    passwordDecoys: ["B", "A", "M"],
     lock: {
       heading: "The Spell Finder is locked",
       body: "My letter has a secret password on the back. Paint it to make the letters appear, then tap them in here.",
