@@ -17,14 +17,9 @@
   };
   const M = () => window.Motifs;
 
-  // Kawaii ghost: round blob, big shiny eyes set low and wide, rosy cheeks, tiny smile, little waving arms.
-  // Kawaii ghost: soft round blob, big shiny eyes set low, rosy cheeks, tiny smile, little nub arms.
-  const ghostSvg = (stroke) => `<path d="M20 84 C20 84 18 50 22 40 C27 22 38 12 50 12 C62 12 73 22 78 40 C82 50 80 84 80 84 C74 92 68 82 62 88 C56 94 54 86 50 86 C46 86 44 94 38 88 C32 82 26 92 20 84Z" fill="${P.ghost}" stroke="${stroke}" stroke-width="3.2" stroke-linejoin="round"/>
-      <path d="M21 58 C14 58 11 64 15 67 C18 69 21 66 22 64" fill="${P.ghost}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M79 58 C86 58 89 64 85 67 C82 69 79 66 78 64" fill="${P.ghost}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
-      <ellipse cx="39" cy="50" rx="6" ry="7.5" fill="${P.ink}"/><ellipse cx="61" cy="50" rx="6" ry="7.5" fill="${P.ink}"/>
-      <circle cx="41" cy="47" r="2.4" fill="#fff"/><circle cx="63" cy="47" r="2.4" fill="#fff"/><circle cx="37.5" cy="53" r="1.1" fill="#fff"/><circle cx="59.5" cy="53" r="1.1" fill="#fff"/>
-      <ellipse cx="30" cy="61" rx="5" ry="3" fill="${P.pink}" opacity=".85"/><ellipse cx="70" cy="61" rx="5" ry="3" fill="${P.pink}" opacity=".85"/>
-      <path d="M46 60 Q50 64 54 60" stroke="${P.ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+  // Simple classic ghost: rounded top, wavy hem, two oval eyes and an "oo" mouth.
+  const ghostSvg = (stroke) => `<path d="M24 92 V46 C24 24 36 10 50 10 C64 10 76 24 76 46 V92 L67 84 L58 92 L50 84 L42 92 L33 84Z" fill="${P.ghost}" stroke="${stroke}" stroke-width="3.5" stroke-linejoin="round"/>
+      <ellipse cx="41" cy="44" rx="5" ry="7" fill="${P.ink}"/><ellipse cx="59" cy="44" rx="5" ry="7" fill="${P.ink}"/><ellipse cx="50" cy="62" rx="5" ry="6.5" fill="${P.ink}"/>`;
   const cauldronSvg = (inside) => `<path d="M28 88 l-6 8 M72 88 l6 8" stroke="${P.ink}" stroke-width="6" stroke-linecap="round"/>
       <path d="M14 46 H86 C88 74 72 92 50 92 C28 92 12 74 14 46Z" fill="${P.ink}"/>
       <rect x="8" y="40" width="84" height="12" rx="6" fill="${P.roof}"/>
@@ -39,17 +34,10 @@
     { id: "pumpkin", name: "Pumpkin", svg: () => M().pumpkin(50, 92, 82, P, false) },
     { id: "bat", name: "Bat", svg: () => M().bat(50, 54, 82, P.purple) + `<circle cx="46" cy="50" r="2.4" fill="${P.mustard}"/><circle cx="54" cy="50" r="2.4" fill="${P.mustard}"/>` },
     { id: "ghost", name: "Ghost", svg: () => ghostSvg(P.ink) },
-    // Kawaii black cat: big round head, tiny body, huge shiny eyes, blush, "w" mouth.
-    { id: "cat", name: "Cat", svg: () => `<path d="M70 86 C86 88 92 72 82 64 C78 61 74 64 77 67" stroke="${P.ink}" stroke-width="7" fill="none" stroke-linecap="round"/>
-      <ellipse cx="50" cy="80" rx="20" ry="13" fill="${P.ink}"/><ellipse cx="41" cy="91" rx="6" ry="4" fill="${P.ink}"/><ellipse cx="59" cy="91" rx="6" ry="4" fill="${P.ink}"/>
-      <path d="M20 34 C18 22 20 12 24 10 C28 9 36 16 40 22Z M80 34 C82 22 80 12 76 10 C72 9 64 16 60 22Z" fill="${P.ink}" stroke="${P.ink}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M25 26 C25 19 26 15 27 15 C29 15 33 19 35 22Z M75 26 C75 19 74 15 73 15 C71 15 67 19 65 22Z" fill="${P.pink}"/>
-      <ellipse cx="50" cy="44" rx="31" ry="27" fill="${P.ink}"/>
-      <ellipse cx="38" cy="45" rx="8.5" ry="9.5" fill="${P.mustard}"/><ellipse cx="62" cy="45" rx="8.5" ry="9.5" fill="${P.mustard}"/>
-      <ellipse cx="38.5" cy="46" rx="6" ry="7.5" fill="${P.roofLine}"/><ellipse cx="61.5" cy="46" rx="6" ry="7.5" fill="${P.roofLine}"/>
-      <circle cx="41" cy="42" r="3" fill="#fff"/><circle cx="64" cy="42" r="3" fill="#fff"/><circle cx="36" cy="50" r="1.4" fill="#fff"/><circle cx="59" cy="50" r="1.4" fill="#fff"/>
-      <ellipse cx="27" cy="57" rx="5" ry="3" fill="${P.pink}" opacity=".9"/><ellipse cx="73" cy="57" rx="5" ry="3" fill="${P.pink}" opacity=".9"/>
-      <path d="M48 55 L52 55 L50 57.5Z" fill="${P.pink}"/><path d="M45 59 Q47.5 62 50 59 Q52.5 62 55 59" stroke="${P.cream}" stroke-width="1.8" fill="none" stroke-linecap="round"/>` },
+    // Simple black cat silhouette: sitting, pointed ears, curled tail, two yellow eyes.
+    { id: "cat", name: "Cat", svg: () => `<path d="M68 90 C86 90 92 74 84 64" stroke="${P.ink}" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M30 92 C26 74 30 60 38 52 C30 46 28 36 30 28 L32 10 L44 22 C48 21 52 21 56 22 L68 10 L70 28 C72 36 70 46 62 52 C70 60 74 74 70 92Z" fill="${P.ink}"/>
+      <ellipse cx="42" cy="36" rx="4.5" ry="5" fill="${P.mustard}"/><ellipse cx="58" cy="36" rx="4.5" ry="5" fill="${P.mustard}"/>` },
     { id: "moon", name: "Moon", svg: () => `<path d="M62 10 C36 12 20 34 22 56 C24 78 44 94 66 90 C48 84 38 68 38 50 C38 32 48 18 62 10Z" fill="${P.mustard}"/>
       <path d="M74 30 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3Z" fill="${P.mustard}"/><circle cx="34" cy="44" r="4" fill="${P.tan}" opacity=".5"/><circle cx="36" cy="66" r="3" fill="${P.tan}" opacity=".5"/>` },
     { id: "hat", name: "Witch's hat", svg: () => `<path d="M50 8 C56 30 62 50 70 72 H30 C40 52 46 30 50 8Z" fill="${P.green}"/>
