@@ -123,7 +123,7 @@
     },
     namesStep: {
       heading: "Who are the Magic Finders?",
-      body: "Type each finder's name so Santa knows who to cheer for. (Grown-ups can help!)",
+      body: "Type each finder's name so the magic knows who to cheer for. (Grown-ups can help!)",
       placeholder: "Name",
       add: "Add another finder",
       button: "Start the hunt",
@@ -170,7 +170,7 @@
       { n: 7, at: "boots", hideAt: "With the coats and boots", next: "bath", code: ["holly", "star", "stocking", "bell"], letter: "A",
         unlock: "Let's stay warm. The magic is getting stronger." },
       { n: 8, at: "bath", hideAt: "Inside the (dry!) bathtub", next: "bed", code: ["house", "gift", "mitten", "tree"], letter: "K",
-        unlock: "Splish splash! The magic loves a bubble bath." },
+        unlock: "Splish splash! Almost there!" },
       { n: 9, at: "bed", hideAt: "Under the blanket on a bed", next: "kitchen", code: ["star", "stocking", "house", "mitten"], letter: "E",
         unlock: "No napping yet! Only one more clue to go." },
       { n: 10, at: "kitchen", hideAt: "In the kitchen, by the cookies", next: "tree", code: ["gift", "holly", "tree", "bell"], letter: "S",
@@ -179,7 +179,7 @@
 
     finale: {
       big: { heading: "You found the magic, {names}!", headingNoName: "You found the magic!", body: "You cracked every code and spelled the magic word. Now tap the present to open your surprise!" },
-      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten magic snowflakes! Now run to the Christmas tree and tap the present in your game to reveal your surprise!" },
+      little: { heading: "You found all the magic, {names}!", headingNoName: "You found all the magic!", body: "Ten magic snowflakes! Now run to the Christmas tree and tap the present to reveal your surprise!" },
       earned: "You've earned",
       tapGift: "Tap the present to open it",
       defaultSurprise: "a Christmas surprise",

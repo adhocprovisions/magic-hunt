@@ -230,12 +230,12 @@
         <section class="panel lock-panel">
           <div class="padlock" id="padlock">${padlockSvg()}</div>
           <p class="say">${esc(T.lock.body)}</p>
-          ${canSpeak ? `<button class="ghost small" id="hearLock">${iconSound()} Hear Santa's message</button>` : ""}
+          ${canSpeak ? `<button class="ghost small" id="hearLock">${iconSound()} Hear the message</button>` : ""}
           <div class="pw-slots" id="pwSlots">${T.password.split("").map(() => '<div class="pw-slot"></div>').join("")}</div>
           <div class="letters">${order.map((l) => `<button class="lt" data-l="${l}">${l}</button>`).join("")}</div>
           <div class="pad-actions"><button class="ghost" id="pwUndo" disabled>Undo</button></div>
           <p class="msg" id="msg"></p>
-        </section>`, { eyebrow: "A message from " + T.character.name, title: T.lock.heading });
+        </section>`, { eyebrow: T.title, title: T.lock.heading });
       pw = [];
       const draw = () => {
         document.querySelectorAll(".pw-slot").forEach((el, i) => { el.textContent = pw[i] || ""; el.classList.toggle("filled", !!pw[i]); });
@@ -445,7 +445,6 @@
             <h2>Your secret letter is</h2>
             <div class="secret">${esc(clue.letter)}</div>
             <p class="say">“${esc(clue.unlock)}”</p>
-            <p class="from">${esc(T.character.name)}</p>
             <p class="note">Write <b>${esc(clue.letter)}</b> in ornament <b>${clue.n}</b> on your Magic Collector.</p>
             <p class="kicker" style="margin-top:4px">${last ? "Your last riddle" : "Your next riddle"}</p>
             ${riddleBox(clue.riddle)}
@@ -486,8 +485,6 @@
             <span>${esc(T.finale.tapGift)}</span>
           </button>
           <div class="reveal" id="reveal" hidden><p class="kicker">${esc(T.finale.earned)}</p><p class="prize">${esc(prize)}</p></div>
-          <p class="note" style="margin:6px 0 0">${esc(T.finale.signoff)}</p>
-          <p class="from">${esc(T.character.name)}</p>
           <button class="ghost light" data-close>Close</button>
         </div>`;
       document.body.appendChild(el);
