@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4ecdc">
+<meta name="robots" content="noindex">
+<title>Secret Missions · Thanksgiving Division</title>
+<link rel="stylesheet" href="../shared/fonts.css">
+<style>
+:root{--paper:#f4ecdc;--ink:#2d2a32;--red:#e4572e;--mustard:#f2b134;--teal:#2b7a78;--pink:#f3a5a0;--mute:#8a7f70;--card:#fffaf0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:Figtree,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{background-image:radial-gradient(rgba(45,42,50,.06) 1px,transparent 1px);background-size:6px 6px;min-height:100vh}
+main{max-width:560px;margin:0 auto;padding:22px 18px calc(40px + env(safe-area-inset-bottom))}
+.wide main,main.wide{max-width:900px}
+.stamp{display:inline-block;border:2.5px solid var(--red);color:var(--red);font-weight:900;letter-spacing:.14em;font-size:13px;padding:4px 10px;transform:rotate(-3deg);border-radius:4px;mix-blend-mode:multiply}
+h1{font-weight:900;font-size:40px;line-height:1;margin:14px 0 6px;letter-spacing:-.02em}
+h1 em{font-style:normal;color:var(--red)}
+h2{font-weight:900;font-size:22px;margin:26px 0 10px}
+.sub{color:var(--mute);font-size:15px;margin:0 0 22px}
+.card{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:18px;box-shadow:5px 5px 0 var(--ink);margin:16px 0}
+.card.teal{background:var(--teal);color:#fff8ec}
+.card.mustard{background:var(--mustard)}
+.card.pink{background:var(--pink)}
+label{display:block;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin:12px 0 6px}
+input,select,textarea{width:100%;font:inherit;font-size:18px;padding:12px 14px;border:2px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none}
+textarea{min-height:76px;resize:vertical}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat}
+input:focus,select:focus,textarea:focus{outline:3px solid var(--mustard);outline-offset:1px}
+button{font:inherit;font-weight:900;font-size:17px;border:2px solid var(--ink);border-radius:12px;padding:13px 18px;background:var(--red);color:#fff8ec;box-shadow:3px 3px 0 var(--ink);cursor:pointer;width:100%;margin-top:14px;letter-spacing:.02em}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+button.ghost{background:transparent;color:var(--ink);box-shadow:none;border-style:dashed;font-weight:800}
+button.teal{background:var(--teal)}
+button.mustard{background:var(--mustard);color:var(--ink)}
+button.small{width:auto;font-size:14px;padding:8px 12px;margin:0}
+button:disabled{opacity:.5}
+.err{color:var(--red);font-weight:800;margin-top:10px;min-height:1.2em}
+.mission{font-size:26px;font-weight:900;line-height:1.2;margin:8px 0 4px}
+.tiny{font-size:12px;letter-spacing:.12em;font-weight:800;text-transform:uppercase;opacity:.85}
+.peek{filter:blur(12px);user-select:none;transition:filter .2s}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+.row>.stamp{flex:none}
+.stamp+.big{margin-top:18px}
+.guess{border-top:2px dashed rgba(45,42,50,.25);padding:12px 0;display:flex;gap:12px;align-items:flex-start}
+.guess:first-child{border-top:0}
+.guess .who{font-weight:900;min-width:84px}
+.guess .what{flex:1}
+.foot{display:flex;justify-content:space-between;margin-top:36px;font-size:14px;color:var(--mute)}
+.foot a{color:var(--mute)}
+.pill{display:inline-block;font-size:12px;font-weight:800;padding:3px 9px;border-radius:99px;background:var(--ink);color:var(--paper)}
+.pill.off{background:transparent;color:var(--mute);border:1.5px dashed var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:16px}
+td,th{padding:10px 6px;text-align:left;border-top:2px dashed rgba(45,42,50,.2)}
+th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;border-top:0}
+.big{font-size:min(13vw,72px);font-weight:900;line-height:1;letter-spacing:-.03em;margin:6px 0 14px}
+.rv-guess{display:flex;gap:12px;align-items:center;padding:12px 14px;border:2px solid var(--ink);border-radius:12px;background:#fff;margin:10px 0;font-size:20px;cursor:pointer}
+.rv-guess b{min-width:90px}
+.rv-guess .tick{margin-left:auto;font-size:26px;width:36px;height:36px;border:2px solid var(--ink);border-radius:50%;display:grid;place-items:center;background:#fff;flex:none}
+.rv-guess.ok{background:#e6f2df}
+.rv-guess.ok .tick{background:var(--teal);color:#fff}
+.say{font-size:28px;font-weight:900;color:var(--red);margin:22px 0 4px}
+.nav{display:flex;gap:10px}
+.nav button{flex:1}
+.score td:last-child{font-weight:900;font-size:22px;text-align:right}
+.confetti{position:fixed;inset:0;pointer-events:none}
+.sync{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));font-size:12px;font-weight:800;background:var(--ink);color:var(--paper);padding:5px 10px;border-radius:99px;opacity:0;transition:opacity .3s}
+.sync.on{opacity:.9}
+</style>
+</head>
+<body>
+<main id="app"><p>Decrypting…</p></main>
+<div class="sync" id="sync"></div>
+<script src="data.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>
